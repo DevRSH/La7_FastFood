@@ -2,7 +2,21 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
+import re
+
 db_url = settings.DATABASE_URL
+
+# Auto-convert direct Supabase IPv6 domain to IPv4 Pooler URL for Render compatibility
+if "db." in db_url and ".supabase.co:5432" in db_url:
+    match = re.search(r'db\.([a-z0-9]+)\.supabase\.co:5432', db_url)
+    if match:
+        proj_ref = match.group(1)
+        db_url = re.sub(
+            r'postgres(?:ql)?://([^:]+):([^@]+)@db\.' + proj_ref + r'\.supabase\.co:5432/(.+)',
+            r'postgresql+asyncpg://\1.' + proj_ref + r':\2@aws-0-sa-east-1.pooler.supabase.com:6543/\3',
+            db_url
+        )
+
 if db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 elif db_url.startswith("postgres://"):
