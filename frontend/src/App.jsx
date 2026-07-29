@@ -22,21 +22,19 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Layout onLogout={logout}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/pos" replace />} />
-          <Route path="/pos" element={<POS />} />
-          <Route path="/fichas" element={<FichasTecnicas />} />
-          <Route path="/insumos" element={<Insumos />} />
-          <Route path="/stock" element={<Stock />} />
-          <Route path="/ventas" element={<Ventas />} />
-          <Route path="/clientes" element={<Clientes />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/config" element={<Configuracion />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <Layout onLogout={logout}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/pos" replace />} />
+        <Route path="/pos" element={<POS />} />
+        <Route path="/fichas" element={<FichasTecnicas />} />
+        <Route path="/insumos" element={<Insumos />} />
+        <Route path="/stock" element={<Stock />} />
+        <Route path="/ventas" element={<Ventas />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/config" element={<Configuracion />} />
+      </Routes>
+    </Layout>
   );
 }
 
