@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.database import get_db
+from app.dependencies import get_db
 from app.schemas.packaging import PackagingCreate, PackagingUpdate, PackagingResponse
 from app.crud.packaging import get_packagings, get_packaging, create_packaging, update_packaging, delete_packaging
 

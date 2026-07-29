@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.database import get_db
+from app.dependencies import get_db
 from app.schemas.utensilio import UtensilioCreate, UtensilioUpdate, UtensilioResponse
 from app.crud.utensilio import get_utensilios, get_utensilio, create_utensilio, update_utensilio, delete_utensilio
 

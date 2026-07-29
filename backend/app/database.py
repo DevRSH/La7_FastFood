@@ -41,3 +41,5 @@ async_session_maker = async_sessionmaker(
 
 class Base(DeclarativeBase):
     pass
+
+from app.dependencies import get_db

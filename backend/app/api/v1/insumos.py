@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.database import get_db
+from app.dependencies import get_db
 from app.schemas.insumo import InsumoCreate, InsumoUpdate, InsumoResponse
 from app.crud.insumo import get_insumos, get_insumo, create_insumo, update_insumo, delete_insumo
 
