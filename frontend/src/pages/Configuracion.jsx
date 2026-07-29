@@ -6,6 +6,23 @@ const PlusIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="non
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
 const EditIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>;
 
+// localStorage helpers
+const LS = {
+  get: (key, fallback) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return fallback;
+  },
+  set: (key, data) => {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch (_) {}
+  }
+};
+
 const mockUtensilios = [
   { id: 1, nombre: 'Horno Industrial 4 Bandejas', costo_compra: 450000, vida_util_horas: 5000 },
   { id: 2, nombre: 'Freidora Eléctrica 10L', costo_compra: 180000, vida_util_horas: 3000 },
@@ -29,21 +46,25 @@ const mockCategorias = [
 ];
 
 export default function Configuracion() {
-  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'utensilios' | 'packaging' | 'categorias'
-  
-  // Data lists
-  const [utensilios, setUtensilios] = useState([]);
-  const [packagingList, setPackagingList] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [activeTab, setActiveTab] = useState('general');
+
+  // Data lists — cargados desde localStorage para sobrevivir la navegación
+  const [utensilios, setUtensiliosState] = useState(() => LS.get('la7_utensilios', mockUtensilios));
+  const [packagingList, setPackagingState] = useState(() => LS.get('la7_packaging', mockPackaging));
+  const [categorias, setCategoriasState] = useState(() => LS.get('la7_categorias', mockCategorias));
+
+  // Wrappers que persisten automáticamente
+  const setUtensilios = (data) => { LS.set('la7_utensilios', data); setUtensiliosState(data); };
+  const setPackagingList = (data) => { LS.set('la7_packaging', data); setPackagingState(data); };
+  const setCategorias = (data) => { LS.set('la7_categorias', data); setCategoriasState(data); };
 
   // General Settings State
-  const [generalConfig, setGeneralConfig] = useState({
-    nombre_negocio: 'La 7 FastFood',
-    pin_acceso: '1234',
-    valor_hora_trabajo: 3500,
-    comision_plataforma_pct: 0,
-    reparto_tipo: 'ninguno',
-    reparto_valor: 0
+  const [generalConfig, setGeneralConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('la7_config');
+      if (saved) return { nombre_negocio: 'La 7 FastFood', pin_acceso: '1234', valor_hora_trabajo: 3500, comision_plataforma_pct: 0, reparto_tipo: 'ninguno', reparto_valor: 0, ...JSON.parse(saved) };
+    } catch (_) {}
+    return { nombre_negocio: 'La 7 FastFood', pin_acceso: '1234', valor_hora_trabajo: 3500, comision_plataforma_pct: 0, reparto_tipo: 'ninguno', reparto_valor: 0 };
   });
 
   // Modal States
@@ -60,21 +81,22 @@ export default function Configuracion() {
   const [categoriaForm, setCategoriaForm] = useState({ nombre: '', color: '#0284c7', orden: 1 });
 
   useEffect(() => {
+    // Intentar sincronizar con backend sin sobreescribir datos locales si la API falla
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const uData = await api.utensilios.getAll().catch(() => mockUtensilios);
-      setUtensilios(Array.isArray(uData) ? uData : mockUtensilios);
+      const uData = await api.utensilios.getAll().catch(() => null);
+      if (Array.isArray(uData) && uData.length > 0) setUtensilios(uData);
 
-      const pData = await api.packaging.getAll().catch(() => mockPackaging);
-      setPackagingList(Array.isArray(pData) ? pData : mockPackaging);
+      const pData = await api.packaging.getAll().catch(() => null);
+      if (Array.isArray(pData) && pData.length > 0) setPackagingList(pData);
 
-      const catData = await api.config?.getCategorias?.().catch(() => mockCategorias);
-      setCategorias(Array.isArray(catData) ? catData : mockCategorias);
+      const catData = await api.config?.getCategorias?.().catch(() => null);
+      if (Array.isArray(catData) && catData.length > 0) setCategorias(catData);
 
-      const cData = await api.config?.get?.().catch(() => generalConfig);
+      const cData = await api.config?.get?.().catch(() => null);
       if (cData && typeof cData === 'object') {
         setGeneralConfig(prev => ({ ...prev, ...cData }));
       }
@@ -205,7 +227,7 @@ export default function Configuracion() {
         <div className="flex items-center gap-3">
           <span style={{ fontSize: '2rem' }}>⚙️</span>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>Configuración del Sistema & Parámetros</h1>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>Configuración del Sistema &amp; Parámetros</h1>
             <p style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>Personaliza todos los datos del negocio, seguridad, tarifas y catálogos maestros</p>
           </div>
         </div>
@@ -234,7 +256,7 @@ export default function Configuracion() {
           onClick={() => setActiveTab('general')}
           style={{ borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0', padding: '0.75rem 1.25rem' }}
         >
-          ⚙️ Parámetros & Seguridad
+          ⚙️ Parámetros &amp; Seguridad
         </button>
         <button
           className={activeTab === 'utensilios' ? 'primary' : 'ghost'}
@@ -262,7 +284,7 @@ export default function Configuracion() {
       {/* TAB 1: GENERAL & SEGURIDAD */}
       {activeTab === 'general' && (
         <div className="card flex-col gap-6" style={{ maxWidth: '700px' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Personalización del Negocio & Parámetros Base</h2>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Personalización del Negocio &amp; Parámetros Base</h2>
           
           <form onSubmit={handleSaveGeneral} className="flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
@@ -349,7 +371,7 @@ export default function Configuracion() {
       {activeTab === 'utensilios' && (
         <div className="card flex-col gap-4" style={{ flex: 1, overflow: 'hidden' }}>
           <div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Catálogo Maestro de Equipamiento & Utensilios</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Catálogo Maestro de Equipamiento &amp; Utensilios</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Registra tus hornos, freidoras y planchas una sola vez. En cada receta solo seleccionas el equipo e indicas las horas de uso.</p>
           </div>
 
@@ -397,7 +419,7 @@ export default function Configuracion() {
       {activeTab === 'packaging' && (
         <div className="card flex-col gap-4" style={{ flex: 1, overflow: 'hidden' }}>
           <div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Catálogo Maestro de Packaging & Materiales</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Catálogo Maestro de Packaging &amp; Materiales</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Define bolsas, cajas y servilletas reutilizables para tus fichas técnicas.</p>
           </div>
 
