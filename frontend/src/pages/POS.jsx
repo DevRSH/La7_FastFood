@@ -1,21 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api, formatCLP, client } from '../api/client';
 
-const mockProducts = [
-  { id: 1, categoria: 'Hamburguesas', nombre: 'Classic Burger', precio: 5000, icono: '🍔', stock: 10 },
-  { id: 2, categoria: 'Hamburguesas', nombre: 'Cheese Burger', precio: 5500, icono: '🍔', stock: 5 },
-  { id: 3, categoria: 'Papas', nombre: 'Papas Fritas Chicas', precio: 2000, icono: '🍟', stock: 0 },
-  { id: 4, categoria: 'Bebidas', nombre: 'Coca Cola 500ml', precio: 1500, icono: '🥤', stock: 20 },
-  { id: 5, categoria: 'Promos', nombre: 'Combo 1', precio: 7000, icono: '🔥', stock: 10 },
-  { id: 6, categoria: 'Salado', nombre: 'Empanada Queso', precio: 1500, icono: '🥟', stock: 15 },
-];
-
-const mockModifiers = [
-  { id: 1, label: 'Sin Mayo', price: 0 },
-  { id: 2, label: 'Sin Tomate', price: 0 },
-  { id: 3, label: 'Extra Queso', price: 500 },
-  { id: 4, label: 'Extra Tocino', price: 700 },
-];
+const mockProducts = [];
+const mockModifiers = [];
 
 const normalizeProduct = (p) => {
   let catName = 'Hamburguesas';
@@ -49,10 +36,17 @@ export default function POS() {
   const [products, setProducts] = useState(() => {
     try {
       const cached = localStorage.getItem('la7_productos_cache');
-      return cached ? JSON.parse(cached) : mockProducts.map(normalizeProduct);
-    } catch (e) {
-      return mockProducts.map(normalizeProduct);
-    }
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Si el caché tiene los productos mock de desarrollo, limpiarlo
+        if (Array.isArray(parsed) && parsed.some(p => ['Classic Burger','Cheese Burger','Papas Fritas Chicas','Coca Cola 500ml','Combo 1','Empanada Queso'].includes(p.nombre))) {
+          localStorage.removeItem('la7_productos_cache');
+          return [];
+        }
+        return parsed;
+      }
+    } catch (e) {}
+    return [];
   });
 
   const categories = ['Todas', ...Array.from(new Set(products.map(p => p.categoria)))];

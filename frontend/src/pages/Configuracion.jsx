@@ -23,35 +23,45 @@ const LS = {
   }
 };
 
-const mockUtensilios = [
-  { id: 1, nombre: 'Horno Industrial 4 Bandejas', costo_compra: 450000, vida_util_horas: 5000 },
-  { id: 2, nombre: 'Freidora Eléctrica 10L', costo_compra: 180000, vida_util_horas: 3000 },
-  { id: 3, nombre: 'Plancha Churrasquera a Gas', costo_compra: 220000, vida_util_horas: 4000 },
-  { id: 4, nombre: 'Olla Inox 20L', costo_compra: 35000, vida_util_horas: 2000 }
-];
-
-const mockPackaging = [
-  { id: 1, nombre: 'Bolsa de papel craft', costo_unitario: 60 },
-  { id: 2, nombre: 'Caja hamburguesa compostable', costo_unitario: 120 },
-  { id: 3, nombre: 'Servilletas (pack 2 un)', costo_unitario: 15 },
-  { id: 4, nombre: 'Vaso polipapel 500ml', costo_unitario: 90 }
-];
-
+const mockUtensilios = [];
+const mockPackaging = [];
 const mockCategorias = [
-  { id: 1, nombre: 'Hamburguesas', color: '#0284c7', orden: 1 },
-  { id: 2, nombre: 'Empanadas & Salado', color: '#d97706', orden: 2 },
-  { id: 3, nombre: 'Papas & Acompañamientos', color: '#16a34a', orden: 3 },
-  { id: 4, nombre: 'Bebidas', color: '#9333ea', orden: 4 },
-  { id: 5, nombre: 'Postres', color: '#db2777', orden: 5 }
+  { id: 1, nombre: 'Hamburguesas', color: '#0284c7', orden: 1 }
 ];
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState('general');
 
-  // Data lists — cargados desde localStorage para sobrevivir la navegación
-  const [utensilios, setUtensiliosState] = useState(() => LS.get('la7_utensilios', mockUtensilios));
-  const [packagingList, setPackagingState] = useState(() => LS.get('la7_packaging', mockPackaging));
-  const [categorias, setCategoriasState] = useState(() => LS.get('la7_categorias', mockCategorias));
+  // Data lists — cargados desde localStorage, limpiando datos de desarrollo viejos
+  const [utensilios, setUtensiliosState] = useState(() => {
+    const DEV_NAMES = ['Horno Industrial 4 Bandejas','Freidora El\u00e9ctrica 10L','Plancha Churrasquera a Gas','Olla Inox 20L'];
+    const stored = LS.get('la7_utensilios', null);
+    if (stored && stored.length > 0 && stored.every(u => DEV_NAMES.includes(u.nombre))) {
+      localStorage.removeItem('la7_utensilios');
+      return [];
+    }
+    return stored || [];
+  });
+  const [packagingList, setPackagingState] = useState(() => {
+    const DEV_NAMES = ['Bolsa de papel craft','Caja hamburguesa compostable','Servilletas (pack 2 un)','Vaso polipapel 500ml'];
+    const stored = LS.get('la7_packaging', null);
+    if (stored && stored.length > 0 && stored.every(p => DEV_NAMES.includes(p.nombre))) {
+      localStorage.removeItem('la7_packaging');
+      return [];
+    }
+    return stored || [];
+  });
+  const [categorias, setCategoriasState] = useState(() => {
+    const DEV_NAMES = ['Hamburguesas','Empanadas & Salado','Papas & Acompa\u00f1amientos','Bebidas','Postres'];
+    const stored = LS.get('la7_categorias', null);
+    // Si tiene los 5 mocks de desarrollo, reemplazar por solo 1 ejemplo
+    if (stored && stored.length === 5 && stored.every(c => DEV_NAMES.includes(c.nombre))) {
+      const clean = [{ id: 1, nombre: 'Hamburguesas', color: '#0284c7', orden: 1 }];
+      LS.set('la7_categorias', clean);
+      return clean;
+    }
+    return stored || [{ id: 1, nombre: 'Hamburguesas', color: '#0284c7', orden: 1 }];
+  });
 
   // Wrappers que persisten automáticamente
   const setUtensilios = (data) => { LS.set('la7_utensilios', data); setUtensiliosState(data); };

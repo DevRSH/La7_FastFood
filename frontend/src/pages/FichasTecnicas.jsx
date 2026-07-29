@@ -10,73 +10,10 @@ const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="no
 const CopyIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
 const EditIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>;
 
-// Mock initial data if API is down
-const defaultFichas = [
-  {
-    id: 1,
-    nombre: 'Empanada de Pino',
-    categoria: 'Empanadas & Salado',
-    rendimiento_lote: 12,
-    mano_obra_min: 90,
-    mano_obra_valor_hora: 3500,
-    precio_venta: 1500,
-    comision: 0,
-    insumos: [
-      { id: 101, nombre: 'Carne molida', cantidad: 800, unidad: 'g', costo_unitario: 6, merma: 15 },
-      { id: 102, nombre: 'Cebolla', cantidad: 600, unidad: 'g', costo_unitario: 0.8, merma: 10 },
-      { id: 103, nombre: 'Harina', cantidad: 900, unidad: 'g', costo_unitario: 1.2, merma: 0 },
-      { id: 104, nombre: 'Huevo', cantidad: 3, unidad: 'un', costo_unitario: 250, merma: 0 }
-    ],
-    utensilios: [
-      { id: 201, utensilio_id: 1, nombre: 'Horno Industrial 4 Bandejas', costo_hora: 90, horas_uso: 1 },
-      { id: 202, utensilio_id: 4, nombre: 'Olla Inox 20L', costo_hora: 17.5, horas_uso: 0.5 }
-    ],
-    packaging: [
-      { id: 301, nombre: 'Bolsa de papel craft', costo: 60, cantidad: 1 },
-      { id: 302, nombre: 'Servilletas', costo: 15, cantidad: 1 }
-    ],
-    costo_total: 980,
-    margen: 0.346
-  },
-  {
-    id: 2,
-    nombre: 'Hamburguesa Doble Queso',
-    categoria: 'Hamburguesas',
-    rendimiento_lote: 1,
-    mano_obra_min: 10,
-    mano_obra_valor_hora: 3500,
-    precio_venta: 7500,
-    comision: 3.5,
-    insumos: [
-      { id: 105, nombre: 'Pan Brioche', cantidad: 1, unidad: 'un', costo_unitario: 300, merma: 0 },
-      { id: 106, nombre: 'Carne Angus 150g', cantidad: 2, unidad: 'un', costo_unitario: 1100, merma: 5 },
-      { id: 107, nombre: 'Queso Cheddar', cantidad: 2, unidad: 'un', costo_unitario: 175, merma: 0 }
-    ],
-    utensilios: [
-      { id: 203, utensilio_id: 3, nombre: 'Plancha Churrasquera a Gas', costo_hora: 55, horas_uso: 0.2 }
-    ],
-    packaging: [
-      { id: 303, nombre: 'Caja hamburguesa compostable', costo: 120, cantidad: 1 }
-    ],
-    costo_total: 2850,
-    margen: 0.62
-  }
-];
-
-const mockInsumosCatalog = [
-  { id: 1, nombre: 'Carne molida', unidad: 'g', costo_promedio: 6000, contenido_envase: 1000 },
-  { id: 2, nombre: 'Cebolla', unidad: 'g', costo_promedio: 800, contenido_envase: 1000 },
-  { id: 3, nombre: 'Harina', unidad: 'g', costo_promedio: 1200, contenido_envase: 1000 },
-  { id: 4, nombre: 'Huevo', unidad: 'un', costo_promedio: 3000, contenido_envase: 12 },
-  { id: 5, nombre: 'Pan Brioche', unidad: 'un', costo_promedio: 1800, contenido_envase: 6 }
-];
-
-const mockUtensiliosCatalog = [
-  { id: 1, nombre: 'Horno Industrial 4 Bandejas', costo_compra: 450000, vida_util_horas: 5000 },
-  { id: 2, nombre: 'Freidora Eléctrica 10L', costo_compra: 180000, vida_util_horas: 3000 },
-  { id: 3, nombre: 'Plancha Churrasquera a Gas', costo_compra: 220000, vida_util_horas: 4000 },
-  { id: 4, nombre: 'Olla Inox 20L', costo_compra: 35000, vida_util_horas: 2000 }
-];
+// Sin datos de ejemplo — la app arranca limpia
+const defaultFichas = [];
+const mockInsumosCatalog = [];
+const mockUtensiliosCatalog = [];
 
 export default function FichasTecnicas() {
   const [view, setView] = useState('list'); // 'list' | 'wizard'
@@ -98,14 +35,14 @@ export default function FichasTecnicas() {
 
   const fetchData = async () => {
     try {
-      const fichasData = await api.fichas.getAll().catch(() => defaultFichas);
-      setFichas(Array.isArray(fichasData) && fichasData.length > 0 ? fichasData : defaultFichas);
+      const fichasData = await api.fichas.getAll().catch(() => []);
+      setFichas(Array.isArray(fichasData) ? fichasData : []);
       
-      const insData = await api.insumos.getAll().catch(() => mockInsumosCatalog);
-      setInsumosCatalog(Array.isArray(insData) ? insData : mockInsumosCatalog);
+      const insData = await api.insumos.getAll().catch(() => []);
+      setInsumosCatalog(Array.isArray(insData) ? insData : []);
 
-      const uteData = await api.utensilios.getAll().catch(() => mockUtensiliosCatalog);
-      setUtensiliosCatalog(Array.isArray(uteData) ? uteData : mockUtensiliosCatalog);
+      const uteData = await api.utensilios.getAll().catch(() => []);
+      setUtensiliosCatalog(Array.isArray(uteData) ? uteData : []);
     } catch (err) {
       console.error(err);
     }
