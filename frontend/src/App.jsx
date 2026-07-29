@@ -7,6 +7,7 @@ import Layout from './components/layout/Layout';
 // Pages
 import POS from './pages/POS';
 import FichasTecnicas from './pages/FichasTecnicas';
+import Productos from './pages/Productos';
 import Insumos from './pages/Insumos';
 import Stock from './pages/Stock';
 import Ventas from './pages/Ventas';
@@ -27,6 +28,7 @@ function App() {
         <Route path="/" element={<Navigate to="/pos" replace />} />
         <Route path="/pos" element={<POS />} />
         <Route path="/fichas" element={<FichasTecnicas />} />
+        <Route path="/productos" element={<Productos />} />
         <Route path="/insumos" element={<Insumos />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/ventas" element={<Ventas />} />

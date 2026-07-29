@@ -8,13 +8,7 @@ const EditIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="non
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
 const CloseIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>;
 
-// Default local state in case API fails
-const defaultInsumos = [
-  { id: 1, nombre: 'Pan de Hamburguesa', unidad: 'un', contenido_envase: 12, costo_promedio: 2400, stock_actual: 48, stock_minimo: 24 },
-  { id: 2, nombre: 'Carne Angus 150g', unidad: 'kg', contenido_envase: 5, costo_promedio: 45000, stock_actual: 15, stock_minimo: 10 },
-  { id: 3, nombre: 'Queso Cheddar', unidad: 'kg', contenido_envase: 2, costo_promedio: 12000, stock_actual: 1, stock_minimo: 3 },
-  { id: 4, nombre: 'Salsa BBQ', unidad: 'lt', contenido_envase: 1, costo_promedio: 3500, stock_actual: 0.5, stock_minimo: 1 },
-];
+const defaultInsumos = [];
 
 export default function Insumos() {
   const [insumos, setInsumos] = useState([]);
@@ -31,10 +25,10 @@ export default function Insumos() {
     setLoading(true);
     try {
       const data = await api.insumos.getAll();
-      setInsumos(Array.isArray(data) ? data : defaultInsumos);
+      setInsumos(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.warn('API error, using local state:', err);
-      setInsumos(defaultInsumos);
+      console.warn('API error:', err);
+      setInsumos([]);
     } finally {
       setLoading(false);
     }

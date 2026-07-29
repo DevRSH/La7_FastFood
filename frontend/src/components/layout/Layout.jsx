@@ -8,6 +8,7 @@ export default function Layout({ children, onLogout }) {
   const navItems = [
     { path: '/pos', label: 'POS', icon: '🏪' },
     { path: '/fichas', label: 'Fichas Técnicas', icon: '📋' },
+    { path: '/productos', label: 'Productos Reventa', icon: '🛒' },
     { path: '/insumos', label: 'Insumos', icon: '🥩' },
     { path: '/stock', label: 'Stock', icon: '📦' },
     { path: '/ventas', label: 'Ventas', icon: '📈' },

@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api, formatCLP } from '../api/client';
 
-const mockClientes = [
-  { id: 1, nombre: 'Juan Pérez', telefono: '+56912345678', direccion: 'Av. Providencia 1234, Depto 402', puntos_acumulados: 150, total_gastado: 45000, total_compras: 3, ultima_compra: '2026-07-20' },
-  { id: 2, nombre: 'María Silva', telefono: '+56987654321', direccion: 'Calle Los Alerces 550, Las Condes', puntos_acumulados: 30, total_gastado: 12000, total_compras: 1, ultima_compra: '2026-07-25' },
-  { id: 3, nombre: 'Carlos González', telefono: '+56955554444', direccion: 'Pasaje El Roble 89, Maipú', puntos_acumulados: 240, total_gastado: 78000, total_compras: 6, ultima_compra: '2026-07-28' },
-];
-
-const mockRecompensas = [
-  { id: 1, nombre: 'Bebida 350ml Gratis', costo_puntos: 50, descripcion: 'Canjeable por cualquier bebida en lata 350ml' },
-  { id: 2, nombre: 'Empanada Gratis', costo_puntos: 80, descripcion: 'Canjeable por empanada de pino o queso' },
-  { id: 3, nombre: '$2.000 Descuento Total', costo_puntos: 150, descripcion: 'Descuento directo en la cuenta final' },
-];
+const mockClientes = [];
+const mockRecompensas = [];
 
 export default function Clientes() {
   const [activeTab, setActiveTab] = useState('directorio'); // 'directorio' | 'recompensas'
@@ -34,11 +25,11 @@ export default function Clientes() {
 
   const loadData = async () => {
     try {
-      const clientsData = await api.clientes.getAll().catch(() => mockClientes);
-      setClientes(Array.isArray(clientsData) && clientsData.length ? clientsData : mockClientes);
+      const clientsData = await api.clientes.getAll().catch(() => []);
+      setClientes(Array.isArray(clientsData) ? clientsData : []);
 
-      const rewardsData = await api.recompensas.getAll().catch(() => mockRecompensas);
-      setRecompensas(Array.isArray(rewardsData) && rewardsData.length ? rewardsData : mockRecompensas);
+      const rewardsData = await api.recompensas.getAll().catch(() => []);
+      setRecompensas(Array.isArray(rewardsData) ? rewardsData : []);
     } catch (err) {
       console.error('Error cargando datos de clientes:', err);
     }

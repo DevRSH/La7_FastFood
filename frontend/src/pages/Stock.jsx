@@ -6,18 +6,8 @@ import {
   AlertCircle, History, Box, DollarSign, X
 } from 'lucide-react';
 
-const MOCK_INSUMOS = [
-  { id: 1, nombre: 'Pan de Hamburguesa', unidad_medida: 'UN', costo_promedio: 150, stock_actual: 50, stock_minimo: 100 },
-  { id: 2, nombre: 'Carne de Vacuno', unidad_medida: 'KG', costo_promedio: 6000, stock_actual: 15, stock_minimo: 10 },
-  { id: 3, nombre: 'Queso Cheddar', unidad_medida: 'LAMINAS', costo_promedio: 50, stock_actual: 300, stock_minimo: 200 },
-  { id: 4, nombre: 'Tomate', unidad_medida: 'KG', costo_promedio: 1200, stock_actual: 2, stock_minimo: 5 },
-];
-
-const MOCK_MOVIMIENTOS = [
-  { id: 1, insumo_nombre: 'Pan de Hamburguesa', tipo: 'ENTRADA', cantidad: 100, stock_resultante: 150, fecha: new Date(Date.now() - 86400000).toISOString(), referencia: 'Compra #001', notas: 'Llegaron en buen estado' },
-  { id: 2, insumo_nombre: 'Carne de Vacuno', tipo: 'SALIDA', cantidad: 5, stock_resultante: 10, fecha: new Date(Date.now() - 43200000).toISOString(), referencia: 'Venta del día', notas: '' },
-  { id: 3, insumo_nombre: 'Tomate', tipo: 'AJUSTE', cantidad: -1, stock_resultante: 2, fecha: new Date().toISOString(), referencia: 'Merma', notas: 'Tomates malogrados' },
-];
+const MOCK_INSUMOS = [];
+const MOCK_MOVIMIENTOS = [];
 
 export default function Stock() {
   const [activeTab, setActiveTab] = useState('estado');
@@ -45,15 +35,15 @@ export default function Stock() {
     setLoading(true);
     try {
       const [insumosData, movsData] = await Promise.all([
-        api.insumos.getAll().catch(() => MOCK_INSUMOS),
-        api.stock.movimientos().catch(() => MOCK_MOVIMIENTOS)
+        api.insumos.getAll().catch(() => []),
+        api.stock.movimientos().catch(() => [])
       ]);
-      setInsumos(insumosData);
-      setMovimientos(movsData);
+      setInsumos(Array.isArray(insumosData) ? insumosData : []);
+      setMovimientos(Array.isArray(movsData) ? movsData : []);
     } catch (error) {
       console.error('Error fetching stock data', error);
-      setInsumos(MOCK_INSUMOS);
-      setMovimientos(MOCK_MOVIMIENTOS);
+      setInsumos([]);
+      setMovimientos([]);
     } finally {
       setLoading(false);
     }
