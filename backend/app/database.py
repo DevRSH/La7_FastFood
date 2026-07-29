@@ -24,10 +24,15 @@ elif db_url.startswith("postgres://"):
 elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
     db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
+connect_args = {}
+if "asyncpg" in db_url:
+    connect_args["statement_cache_size"] = 0
+
 engine = create_async_engine(
     db_url,
     pool_pre_ping=True,
-    echo=False
+    echo=False,
+    connect_args=connect_args
 )
 
 async_session_maker = async_sessionmaker(
