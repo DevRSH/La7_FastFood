@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
 export default function PinScreen({ onLogin }) {
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (pin.length === 4) {
+    if (pin.length === 4 && !loading) {
       handleLogin();
     }
   }, [pin]);
 
   const handleLogin = async () => {
+    setLoading(true);
     const success = await onLogin(pin);
+    setLoading(false);
     if (!success) {
       setError(true);
       setTimeout(() => {

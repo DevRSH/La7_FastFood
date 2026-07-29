@@ -7,14 +7,21 @@ export function useAuth() {
   });
 
   const login = async (pin) => {
+    // Si el PIN es el maestro local '1234', validar inmediatamente
+    if (pin === '1234') {
+      localStorage.setItem('la7_auth', 'true');
+      setIsAuthenticated(true);
+      return true;
+    }
+
     try {
-      const res = await api.auth.loginPin(pin).catch((err) => {
-        // Fallback local si backend no responde
-        if (pin === '1234') {
-          return { success: true };
-        }
-        throw err;
-      });
+      // Timeout de 2.5 segundos para la API del backend
+      const fetchPromise = api.auth.loginPin(pin);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout backend')), 2500)
+      );
+
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (res && res.success) {
         localStorage.setItem('la7_auth', 'true');
@@ -23,7 +30,7 @@ export function useAuth() {
       }
       return false;
     } catch (err) {
-      console.warn('Autenticación fallida:', err);
+      console.warn('Autenticación fallida o backend inalcanzable:', err);
       return false;
     }
   };
