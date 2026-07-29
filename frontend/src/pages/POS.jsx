@@ -17,10 +17,46 @@ const mockModifiers = [
   { id: 4, label: 'Extra Tocino', price: 700 },
 ];
 
+const normalizeProduct = (p) => {
+  let catName = 'Hamburguesas';
+  if (typeof p.categoria === 'string') {
+    catName = p.categoria;
+  } else if (p.categoria && typeof p.categoria === 'object' && p.categoria.nombre) {
+    catName = p.categoria.nombre;
+  } else if (p.categoria_nombre) {
+    catName = p.categoria_nombre;
+  }
+
+  const nombreLower = (p.nombre || '').toLowerCase();
+  let icon = '🍔';
+  if (catName.toLowerCase().includes('bebida') || nombreLower.includes('coca') || nombreLower.includes('bebida')) icon = '🥤';
+  else if (catName.toLowerCase().includes('papa') || nombreLower.includes('papa')) icon = '🍟';
+  else if (catName.toLowerCase().includes('empanada') || catName.toLowerCase().includes('salado') || nombreLower.includes('empanada')) icon = '🥟';
+  else if (catName.toLowerCase().includes('postre') || nombreLower.includes('postre')) icon = '🍰';
+  else if (catName.toLowerCase().includes('promo') || nombreLower.includes('combo')) icon = '🔥';
+
+  return {
+    id: p.id,
+    nombre: p.nombre,
+    precio: p.precio,
+    categoria: catName,
+    icono: p.icono || icon,
+    stock: p.stock ?? 20
+  };
+};
+
 export default function POS() {
-  const [categories] = useState(['Todas', 'Salado', 'Hamburguesas', 'Papas', 'Bebidas', 'Promos']);
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('la7_productos_cache');
+      return cached ? JSON.parse(cached) : mockProducts.map(normalizeProduct);
+    } catch (e) {
+      return mockProducts.map(normalizeProduct);
+    }
+  });
+
+  const categories = ['Todas', ...Array.from(new Set(products.map(p => p.categoria)))];
   const [activeCategory, setActiveCategory] = useState('Todas');
-  const [products, setProducts] = useState(mockProducts);
   
   const [cart, setCart] = useState([]);
   const [orderType, setOrderType] = useState('Local'); // 'Local' | 'Delivery'
@@ -52,10 +88,16 @@ export default function POS() {
   const [ticket, setTicket] = useState(null);
 
   useEffect(() => {
-    // Fetch products
+    // Fetch products from backend
     api.productos.getAll()
-      .then(data => { if (data.length) setProducts(data); })
-      .catch(err => console.log('Using mock products', err));
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const normalized = data.map(normalizeProduct);
+          setProducts(normalized);
+          localStorage.setItem('la7_productos_cache', JSON.stringify(normalized));
+        }
+      })
+      .catch(err => console.log('Usando caché de productos local:', err));
 
     // Fetch live config from server
     api.config?.get?.()
