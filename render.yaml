@@ -3,6 +3,7 @@ services:
     name: la7-fastfood-api
     env: python
     region: oregon
+    plan: free
     rootDir: backend
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
