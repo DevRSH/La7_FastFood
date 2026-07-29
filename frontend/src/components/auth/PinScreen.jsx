@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 export default function PinScreen({ onLogin }) {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
