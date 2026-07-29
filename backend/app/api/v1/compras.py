@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from app.api.dependencies import get_db
+from app.dependencies import get_db
 from app.schemas.compra import CompraInsumoCreate, CompraInsumoResponse
 from app.services.stock import registrar_compra
 from app.crud.compra import get_compras

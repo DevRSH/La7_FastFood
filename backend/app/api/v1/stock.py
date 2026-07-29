@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
-from app.api.dependencies import get_db
+from app.dependencies import get_db
 from app.schemas.stock import MovimientoStockResponse, AjusteStockCreate, ValorizadoResponse
 from app.schemas.insumo import InsumoResponse
 from app.services.stock import ajustar_stock, obtener_alertas, obtener_valorizado
