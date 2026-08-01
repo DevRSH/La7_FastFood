@@ -6,6 +6,7 @@ import Layout from './components/layout/Layout';
 
 // Pages
 import POS from './pages/POS';
+import Cocina from './pages/Cocina';
 import FichasTecnicas from './pages/FichasTecnicas';
 import Productos from './pages/Productos';
 import Insumos from './pages/Insumos';
@@ -27,6 +28,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/pos" replace />} />
         <Route path="/pos" element={<POS />} />
+        <Route path="/cocina" element={<Cocina />} />
         <Route path="/fichas" element={<FichasTecnicas />} />
         <Route path="/productos" element={<Productos />} />
         <Route path="/insumos" element={<Insumos />} />

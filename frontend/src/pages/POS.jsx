@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api, formatCLP } from '../api/client';
+import { saveOfflineOrder } from '../utils/offlineQueue';
 
 const mockModifiers = [];
 
@@ -211,45 +212,48 @@ export default function POS() {
         }))
       };
 
-      const response = await api.ventas.create(payload).catch((err) => {
-        console.warn('API de ventas no disponible, usando fallback local:', err);
-        const num = Math.floor(Math.random() * 1000).toString().padStart(5, '0');
-        return {
-          numero_ticket: `T-${num}`,
-          vuelto: paymentMethod === 'Efectivo' && cashAmount ? parseInt(cashAmount) - total : 0,
-          puntos_ganados: Math.floor(total / 100),
-          total: total
-        };
-      });
+      let isOffline = !navigator.onLine;
+      let response = null;
+
+      if (!isOffline) {
+        response = await api.ventas.create(payload).catch((err) => {
+          console.warn('API no disponible, guardando en cola offline:', err);
+          isOffline = true;
+          return null;
+        });
+      }
+
+      const ticketNumber = response?.numero_ticket || `#T-${Math.floor(Math.random() * 10000).toString().padStart(5, '0')}`;
 
       const newTicket = {
-        id: response.id || Date.now(),
-        numero: response.numero_ticket ? (response.numero_ticket.startsWith('#') ? response.numero_ticket : `#${response.numero_ticket}`) : `#T-00001`,
-        numero_ticket: response.numero_ticket || `#T-00001`,
-        fecha: response.fecha || new Date().toISOString(),
+        id: response?.id ? String(response.id) : `OFF-${Date.now()}`,
+        numero: ticketNumber.startsWith('#') ? ticketNumber : `#${ticketNumber}`,
+        numero_ticket: ticketNumber,
+        fecha: response?.fecha || new Date().toISOString(),
         items: cart,
-        detalles: cart.map(i => ({ producto: i.nombre, cantidad: i.qty, precioUnitario: i.precio, subtotal: i.unitTotal * i.qty, costoCongelado: i.precio * 0.4, margen: 60 })),
+        detalles: cart.map(i => ({ producto: i.nombre, cantidad: i.qty, precioUnitario: i.precio, subtotal: i.unitTotal * i.qty })),
         paymentMethod,
         medio_pago: paymentMethod,
         orderType,
+        canal: orderType,
         customer,
-        cliente: customer ? customer.nombre : null,
+        cliente: customer ? customer.nombre : 'Consumidor Final',
         deliveryFee: currentDeliveryFee,
-        change: response.vuelto ?? 0,
-        pointsEarned: response.puntos_ganados ?? Math.floor(total / 100),
-        total: response.total ?? total,
+        change: response?.vuelto ?? (paymentMethod === 'Efectivo' && cashAmount ? parseInt(cashAmount) - total : 0),
+        pointsEarned: response?.puntos_ganados ?? Math.floor(total / 100),
+        total: response?.total ?? total,
         estado: 'Completada',
-        anulada: false
+        anulada: false,
+        sync_status: isOffline ? 'PENDING' : 'SYNCED'
       };
 
-      try {
-        const saved = JSON.parse(localStorage.getItem('la7_ventas_locales') || '[]');
-        localStorage.setItem('la7_ventas_locales', JSON.stringify([newTicket, ...saved]));
-      } catch (e) {}
+      // Guardar de forma resiliente en IndexedDB y crear comanda de cocina KDS
+      await saveOfflineOrder(newTicket);
 
       setTicket(newTicket);
       setShowPayment(false);
     } catch (err) {
+      console.error(err);
       alert('Error al registrar la venta en el sistema.');
     }
   };

@@ -27,6 +27,7 @@ export default function Layout({ children, onLogout }) {
 
   const navItems = [
     { path: '/pos', label: 'POS', icon: '🏪' },
+    { path: '/cocina', label: 'Cocina (KDS)', icon: '🍳' },
     { path: '/fichas', label: 'Fichas Técnicas', icon: '📋' },
     { path: '/productos', label: 'Productos Reventa', icon: '🛒' },
     { path: '/insumos', label: 'Insumos', icon: '🥩' },
@@ -39,7 +40,7 @@ export default function Layout({ children, onLogout }) {
 
   const bottomNavItems = [
     { path: '/pos', label: 'POS', icon: '🏪' },
-    { path: '/fichas', label: 'Fichas', icon: '📋' },
+    { path: '/cocina', label: 'Cocina', icon: '🍳' },
     { path: '/stock', label: 'Stock', icon: '📦' },
     { path: '/ventas', label: 'Ventas', icon: '📈' },
   ];
