@@ -74,14 +74,6 @@ export default function Ventas() {
 
       let allVentas = Array.from(mergedMap.values());
 
-      if (allVentas.length === 0) {
-        allVentas = [
-          { id: 1, numero_ticket: '#T-00001', fecha: new Date(Date.now() - 3600000).toISOString(), total: 15500, metodoPago: 'Tarjeta', estado: 'Completada', cliente: 'Juan Pérez', items: [] },
-          { id: 2, numero_ticket: '#T-00002', fecha: new Date(Date.now() - 7200000).toISOString(), total: 8000, metodoPago: 'Efectivo', estado: 'Completada', cliente: 'Consumidor Final', items: [] },
-          { id: 3, numero_ticket: '#T-00003', fecha: new Date(Date.now() - 10800000).toISOString(), total: 12000, metodoPago: 'Transferencia', estado: 'Anulada', cliente: 'María Silva', items: [] }
-        ].map(normalizeVenta);
-      }
-
       if (filtros.metodoPago) {
         allVentas = allVentas.filter(v => v.metodoPago.toLowerCase() === filtros.metodoPago.toLowerCase());
       }

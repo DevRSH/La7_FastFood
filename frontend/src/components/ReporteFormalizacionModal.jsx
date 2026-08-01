@@ -7,33 +7,33 @@ import {
 
 const DEFAULT_REPORT_DATA = {
   desglose_tributario: {
-    ventas_brutas: 6545000,
-    ventas_netas: 5500000,
-    iva_debito_fiscal: 1045000,
-    cogs_bruto: 2290750,
-    cogs_neto: 1925000,
-    iva_credito_cogs: 365750,
-    opex_afecto_bruto: 300000,
-    opex_afecto_neto: 252101,
-    iva_credito_opex: 47899,
-    opex_exento: 1800000,
-    opex_fijo_neto_total: 2052101,
-    estimacion_iva_f29_a_pagar: 631351
+    ventas_brutas: 0,
+    ventas_netas: 0,
+    iva_debito_fiscal: 0,
+    cogs_bruto: 0,
+    cogs_neto: 0,
+    iva_credito_cogs: 0,
+    opex_afecto_bruto: 0,
+    opex_afecto_neto: 0,
+    iva_credito_opex: 0,
+    opex_exento: 0,
+    opex_fijo_neto_total: 0,
+    estimacion_iva_f29_a_pagar: 0
   },
   margen_ebitda: {
-    margen_bruto_clp: 3575000,
-    margen_bruto_porcentaje: 65.0,
-    ebitda_clp: 1522899,
-    ebitda_porcentaje: 27.69,
-    ticket_promedio_neto: 5500.0,
-    transacciones_totales: 1000
+    margen_bruto_clp: 0,
+    margen_bruto_porcentaje: 0.0,
+    ebitda_clp: 0,
+    ebitda_porcentaje: 0.0,
+    ticket_promedio_neto: 0,
+    transacciones_totales: 0
   },
   punto_equilibrio: {
-    pe_neto_clp: 3157078,
-    pe_bruto_clp: 3756923,
-    pe_unidades_mes: 574,
-    pe_unidades_dia: 22,
-    promociones_diarias_requeridas: 22
+    pe_neto_clp: 0,
+    pe_bruto_clp: 0,
+    pe_unidades_mes: 0,
+    pe_unidades_dia: 0,
+    promociones_diarias_requeridas: 0
   },
   programas_chile_elegibles: [
     { nombre: 'SERCOTEC Capital Semilla / Abeja', subsidio: '$3.500.000 CLP', coaporte: '10%-20%', enfoque: 'Emprendimientos no formalizados. Financiamiento de equipamiento inox, habilitación y formalización.' },
@@ -56,7 +56,7 @@ const DEFAULT_REPORT_DATA = {
     { categoria: 'Capital de Trabajo Inicial', concepto: 'Stock insumos alimenticios iniciales y packaging compostable', monto_clp: 600000, porcentaje: 10.0, fuente: 'Subsidio / Aporte Titular' }
   ],
   total_formalizacion_estimado: 1503000,
-  capital_trabajo_inventario: 850000,
+  capital_trabajo_inventario: 0,
   regimen_tributario_sugerido: 'ProPyme General 14 D3 (Tasa 10%/25% sobre Utilidad Neta)'
 };
 

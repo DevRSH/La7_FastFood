@@ -5,7 +5,12 @@ import { FileText, TrendingUp, DollarSign, Award, AlertTriangle } from 'lucide-r
 
 export default function Dashboard() {
   const [kpis, setKpis] = useState({ ventasTotales: 0, utilidadReal: 0, margenPromedio: 0, ticketPromedio: 0 });
-  const [timeline, setTimeline] = useState([]);
+  const [timeline, setTimeline] = useState([
+    { day: 'Lun', sales: 0 }, { day: 'Mar', sales: 0 },
+    { day: 'Mié', sales: 0 }, { day: 'Jue', sales: 0 },
+    { day: 'Vie', sales: 0 }, { day: 'Sáb', sales: 0 },
+    { day: 'Dom', sales: 0 }
+  ]);
   const [productMargins, setProductMargins] = useState([]);
   const [stockAlerts, setStockAlerts] = useState([]);
   const [loyaltySummary, setLoyaltySummary] = useState({ totalClients: 0, pointsIssued: 0, redemptionRate: 0 });
@@ -17,46 +22,97 @@ export default function Dashboard() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const kpiData = await api.dashboard.getKPIs().catch(() => ({
-          ventasTotales: 6545000,
-          utilidadReal: 1475000,
-          margenPromedio: 65,
-          ticketPromedio: 6545,
-          trends: { ventas: 15, utilidad: 12, margen: 3, ticket: 8 }
-        }));
-        setKpis(kpiData);
-
-        const timeData = await api.dashboard.getSalesTimeline().catch(() => [
-          { day: 'Lun', sales: 720000 }, { day: 'Mar', sales: 850000 },
-          { day: 'Mié', sales: 910000 }, { day: 'Jue', sales: 1100000 },
-          { day: 'Vie', sales: 1450000 }, { day: 'Sáb', sales: 1800000 },
-          { day: 'Dom', sales: 1200000 }
+        // Cargar ventas reales desde API y localStorage local
+        const [apiSales, localSalesRaw, insumosData, clientsData, fichasData] = await Promise.all([
+          api.ventas.getAll().catch(() => []),
+          Promise.resolve(JSON.parse(localStorage.getItem('la7_ventas_locales') || '[]')),
+          api.insumos.getAll().catch(() => []),
+          api.clientes.getAll().catch(() => []),
+          api.fichas.getAll().catch(() => [])
         ]);
-        setTimeline(timeData);
 
-        const marginsData = await api.dashboard.getProductMargins().catch(() => [
-          { name: 'Hamburguesa La 7 Special', margin: 68 },
-          { name: 'Combo Churrasco Italiano', margin: 64 },
-          { name: 'Papas Cargadas XL', margin: 72 },
-          { name: 'Promo Familiar 4x', margin: 58 },
+        // Combinar ventas reales
+        const mergedMap = new Map();
+        (apiSales || []).forEach(v => mergedMap.set(v.id || v.numero_ticket, v));
+        (localSalesRaw || []).forEach(v => {
+          if (!mergedMap.has(v.id || v.numero_ticket)) mergedMap.set(v.id || v.numero_ticket, v);
+        });
+
+        const completedVentas = Array.from(mergedMap.values()).filter(v => (v.estado || 'Completada') === 'Completada' && !v.anulada);
+
+        let totalVentas = 0;
+        let totalQty = completedVentas.length;
+        
+        completedVentas.forEach(v => {
+          totalVentas += Number(v.total || 0);
+        });
+
+        const ticketProm = totalQty > 0 ? Math.round(totalVentas / totalQty) : 0;
+        const estUtilidad = Math.round(totalVentas * 0.60); // Est 60% margen bruto de contribución
+
+        setKpis({
+          ventasTotales: totalVentas,
+          utilidadReal: estUtilidad,
+          margenPromedio: totalQty > 0 ? 60 : 0,
+          ticketPromedio: ticketProm
+        });
+
+        // Timeline dinámica por días
+        const daysMap = { 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 0: 'Dom' };
+        const salesByDay = { Lun: 0, Mar: 0, Mié: 0, Jue: 0, Vie: 0, Sáb: 0, Dom: 0 };
+
+        completedVentas.forEach(v => {
+          if (v.fecha) {
+            const d = new Date(v.fecha).getDay();
+            const dayName = daysMap[d];
+            if (dayName) salesByDay[dayName] += Number(v.total || 0);
+          }
+        });
+
+        setTimeline([
+          { day: 'Lun', sales: salesByDay.Lun },
+          { day: 'Mar', sales: salesByDay.Mar },
+          { day: 'Mié', sales: salesByDay.Mié },
+          { day: 'Jue', sales: salesByDay.Jue },
+          { day: 'Vie', sales: salesByDay.Vie },
+          { day: 'Sáb', sales: salesByDay.Sáb },
+          { day: 'Dom', sales: salesByDay.Dom }
         ]);
-        setProductMargins(marginsData);
 
-        const stockData = await api.dashboard.getStockAlerts().catch(() => [
-          { item: 'Pan de Hamburguesa', current: 20, min: 50 },
-          { item: 'Queso Cheddar', current: 5, min: 20 },
-        ]);
-        setStockAlerts(stockData);
+        // Alertas de Stock Reales
+        if (Array.isArray(insumosData)) {
+          const alerts = insumosData
+            .filter(i => i.stock_actual <= i.stock_minimo)
+            .map(i => ({ item: i.nombre, current: i.stock_actual, min: i.stock_minimo }));
+          setStockAlerts(alerts);
+        }
 
-        const loyaltyData = await api.dashboard.getLoyaltySummary().catch(() => ({
-          totalClients: 345,
-          pointsIssued: 12500,
-          redemptionRate: 42
-        }));
-        setLoyaltySummary(loyaltyData);
+        // Clientes Reales
+        if (Array.isArray(clientsData)) {
+          let totalPts = 0;
+          clientsData.forEach(c => totalPts += Number(c.puntos_acumulados || c.puntos || 0));
+          setLoyaltySummary({
+            totalClients: clientsData.length,
+            pointsIssued: totalPts,
+            redemptionRate: clientsData.length > 0 ? 100 : 0
+          });
+        }
+
+        // Márgenes Reales de Fichas Técnicas
+        if (Array.isArray(fichasData) && fichasData.length > 0) {
+          const margins = fichasData.map(f => {
+            const costo = Number(f.costo_total || 0);
+            const precio = Number(f.precio_venta || 0);
+            const mg = precio > 0 ? Math.round(((precio - costo) / precio) * 100) : 0;
+            return { name: f.nombre, margin: mg };
+          });
+          setProductMargins(margins);
+        } else {
+          setProductMargins([]);
+        }
 
       } catch (err) {
-        console.error(err);
+        console.error('Error cargando métricas dinámicas del dashboard:', err);
       }
     };
     loadData();
@@ -108,10 +164,10 @@ export default function Dashboard() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Ventas Totales (Bruto)', value: formatCLP(kpis.ventasTotales), trend: kpis.trends?.ventas, icon: <DollarSign size={22} />, color: 'var(--cyan)' },
-          { label: 'Utilidad Real Estimada', value: formatCLP(kpis.utilidadReal), trend: kpis.trends?.utilidad, icon: <TrendingUp size={22} />, color: 'var(--green)' },
-          { label: 'Margen Promedio', value: `${kpis.margenPromedio}%`, trend: kpis.trends?.margen, icon: <Award size={22} />, color: 'var(--amber)' },
-          { label: 'Ticket Promedio', value: formatCLP(kpis.ticketPromedio), trend: kpis.trends?.ticket, icon: <FileText size={22} />, color: 'var(--purple)' }
+          { label: 'Ventas Totales (Bruto)', value: formatCLP(kpis.ventasTotales), icon: <DollarSign size={22} />, color: 'var(--cyan)' },
+          { label: 'Utilidad Real Estimada', value: formatCLP(kpis.utilidadReal), icon: <TrendingUp size={22} />, color: 'var(--green)' },
+          { label: 'Margen Promedio', value: `${kpis.margenPromedio}%`, icon: <Award size={22} />, color: 'var(--amber)' },
+          { label: 'Ticket Promedio', value: formatCLP(kpis.ticketPromedio), icon: <FileText size={22} />, color: 'var(--purple)' }
         ].map((kpi, idx) => (
           <div key={idx} className="card flex items-center gap-3">
             <div style={{ padding: '0.75rem', background: 'var(--surface-3)', color: kpi.color, borderRadius: 'var(--radius-sm)' }}>
@@ -120,11 +176,6 @@ export default function Dashboard() {
             <div>
               <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</p>
               <p className="mono" style={{ fontSize: '1.35rem', fontWeight: 800 }}>{kpi.value}</p>
-              {kpi.trend !== undefined && (
-                <p style={{ fontSize: '0.75rem', color: kpi.trend >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>
-                  {kpi.trend >= 0 ? '↑' : '↓'} {Math.abs(kpi.trend)}% vs mes anterior
-                </p>
-              )}
             </div>
           </div>
         ))}
@@ -169,10 +220,6 @@ export default function Dashboard() {
               <span>Puntos Emitidos:</span>
               <span className="mono font-bold" style={{ color: 'var(--amber)' }}>{loyaltySummary.pointsIssued} pts</span>
             </div>
-            <div className="flex justify-between pt-1" style={{ fontSize: '0.85rem' }}>
-              <span>Tasa de Canje:</span>
-              <span className="mono font-bold" style={{ color: 'var(--green)' }}>{loyaltySummary.redemptionRate}%</span>
-            </div>
           </div>
           
           <div className="card flex-col gap-3" style={{ borderLeft: '4px solid var(--red)' }}>
@@ -195,25 +242,29 @@ export default function Dashboard() {
 
       {/* Product Margins */}
       <div className="card flex-col gap-4">
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Márgenes de Contribución por Producto</h3>
-        <div className="flex-col gap-3">
-          {productMargins.map((prod, idx) => (
-            <div key={idx} className="flex flex-col-mobile items-start md:items-center gap-2 text-xs md:text-sm">
-              <div style={{ width: '200px', fontWeight: 600 }}>{prod.name}</div>
-              <div className="flex-1 w-full" style={{ backgroundColor: 'var(--surface-3)', height: '10px', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{ 
-                  width: `${prod.margin}%`, 
-                  background: getMarginColor(prod.margin),
-                  height: '100%',
-                  borderRadius: '999px'
-                }}></div>
+        <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Márgenes de Contribución por Ficha Técnica</h3>
+        {productMargins.length === 0 ? (
+          <p className="empty-state">No hay fichas técnicas creadas para calcular márgenes.</p>
+        ) : (
+          <div className="flex-col gap-3">
+            {productMargins.map((prod, idx) => (
+              <div key={idx} className="flex flex-col-mobile items-start md:items-center gap-2 text-xs md:text-sm">
+                <div style={{ width: '200px', fontWeight: 600 }}>{prod.name}</div>
+                <div className="flex-1 w-full" style={{ backgroundColor: 'var(--surface-3)', height: '10px', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    width: `${Math.max(prod.margin, 0)}%`, 
+                    background: getMarginColor(prod.margin),
+                    height: '100%',
+                    borderRadius: '999px'
+                  }}></div>
+                </div>
+                <div className="mono font-bold" style={{ minWidth: '50px', textAlign: 'right', color: getMarginColor(prod.margin) }}>
+                  {prod.margin}%
+                </div>
               </div>
-              <div className="mono font-bold" style={{ minWidth: '50px', textAlign: 'right', color: getMarginColor(prod.margin) }}>
-                {prod.margin}%
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* CORFO / SERCOTEC Report Modal */}

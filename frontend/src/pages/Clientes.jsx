@@ -93,13 +93,10 @@ export default function Clientes() {
 
   const openHistorial = async (cliente) => {
     try {
-      const history = await api.clientes.getHistorial(cliente.id).catch(() => ([
-        { fecha: new Date().toISOString(), descripcion: 'Compra en POS #T-0012', puntos: 45, saldo_resultante: (cliente.puntos_acumulados || 0) },
-        { fecha: new Date().toISOString(), descripcion: 'Bonus Registro Cliente', puntos: 100, saldo_resultante: 100 },
-      ]));
+      const history = await api.clientes.getHistorial(cliente.id).catch(() => []);
       setHistorialModal({ isOpen: true, cliente, history: Array.isArray(history) ? history : [] });
     } catch (err) {
-      console.error(err);
+      setHistorialModal({ isOpen: true, cliente, history: [] });
     }
   };
 
