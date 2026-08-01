@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api, formatCLP } from '../api/client';
 
-const mockClientes = [];
-const mockRecompensas = [];
-
 export default function Clientes() {
   const [activeTab, setActiveTab] = useState('directorio'); // 'directorio' | 'recompensas'
   const [clientes, setClientes] = useState([]);
@@ -41,7 +38,6 @@ export default function Clientes() {
     (c.direccion || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // --- CRUD CLIENTES ---
   const handleOpenClienteModal = (cliente = null) => {
     if (cliente) {
       setClienteModal({ isOpen: true, data: cliente });
@@ -66,11 +62,9 @@ export default function Clientes() {
 
     try {
       if (clienteModal.data) {
-        // Update existing
         await api.clientes.update(clienteModal.data.id, clienteForm).catch(() => {});
         setClientes(clientes.map(c => c.id === clienteModal.data.id ? { ...c, ...clienteForm } : c));
       } else {
-        // Create new
         const created = await api.clientes.create(clienteForm).catch(() => ({
           id: Date.now(),
           ...clienteForm,
@@ -97,7 +91,6 @@ export default function Clientes() {
     }
   };
 
-  // --- HISTORIAL & PUNTOS ---
   const openHistorial = async (cliente) => {
     try {
       const history = await api.clientes.getHistorial(cliente.id).catch(() => ([
@@ -110,7 +103,6 @@ export default function Clientes() {
     }
   };
 
-  // --- RECOMPENSAS CRUD ---
   const handleOpenRecompensaModal = (rec = null) => {
     if (rec) {
       setRecompensaModal({ isOpen: true, data: rec });
@@ -154,63 +146,63 @@ export default function Clientes() {
   };
 
   return (
-    <div className="flex-col animate-slide-up" style={{ gap: '1.5rem', width: '100%' }}>
+    <div className="flex-col animate-slide-up" style={{ gap: '1.5rem', width: '100%', padding: '0.5rem' }}>
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col-mobile justify-between items-start md:items-center gap-3">
         <div className="flex items-center gap-3">
           <span style={{ fontSize: '2rem' }}>👥</span>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>Directorio & Mantenedor de Clientes</h1>
-            <p style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>Gestión de teléfonos, direcciones, fidelización y puntos acumulados</p>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>Directorio de Clientes</h1>
+            <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Teléfonos, direcciones, fidelización y puntos acumulados</p>
           </div>
         </div>
 
         {activeTab === 'directorio' ? (
-          <button className="primary flex items-center gap-2" style={{ padding: '0.75rem 1.5rem' }} onClick={() => handleOpenClienteModal()}>
+          <button className="primary flex items-center gap-2 w-full-mobile" style={{ padding: '0.75rem 1.25rem' }} onClick={() => handleOpenClienteModal()}>
             ➕ Nuevo Cliente
           </button>
         ) : (
-          <button className="primary flex items-center gap-2" style={{ padding: '0.75rem 1.5rem' }} onClick={() => handleOpenRecompensaModal()}>
+          <button className="primary flex items-center gap-2 w-full-mobile" style={{ padding: '0.75rem 1.25rem' }} onClick={() => handleOpenRecompensaModal()}>
             🎁 Nueva Recompensa
           </button>
         )}
       </div>
 
       {/* Tabs Bar */}
-      <div className="flex gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex gap-2 border-b pb-2 flex-wrap" style={{ borderColor: 'var(--border)' }}>
         <button
           className={activeTab === 'directorio' ? 'primary' : 'secondary'}
           onClick={() => setActiveTab('directorio')}
-          style={{ padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)' }}
+          style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
         >
-          👤 Directorio de Clientes ({clientes.length})
+          👤 Clientes ({clientes.length})
         </button>
         <button
           className={activeTab === 'recompensas' ? 'primary' : 'secondary'}
           onClick={() => setActiveTab('recompensas')}
-          style={{ padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)' }}
+          style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
         >
-          ⭐ Catálogo de Recompensas ({recompensas.length})
+          ⭐ Recompensas ({recompensas.length})
         </button>
       </div>
 
       {/* TAB 1: DIRECTORIO DE CLIENTES */}
       {activeTab === 'directorio' && (
         <div className="card flex-col gap-4" style={{ width: '100%' }}>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col-mobile justify-between items-start md:items-center gap-3">
             <input
               type="text"
               placeholder="🔍 Buscar por nombre, teléfono (+569...) o dirección..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ maxWidth: '450px', padding: '0.65rem 1rem' }}
+              style={{ maxWidth: '450px' }}
             />
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Mostrando <strong>{filteredClientes.length}</strong> clientes registrados
+              Registrados: <strong>{filteredClientes.length}</strong>
             </span>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -233,10 +225,10 @@ export default function Clientes() {
                       <td style={{ fontWeight: 700 }}>{c.nombre}</td>
                       <td className="mono" style={{ fontWeight: 600, color: 'var(--cyan)' }}>{c.telefono}</td>
                       <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        {c.direccion || <span style={{ color: 'var(--muted)', italic: 'true' }}>Sin dirección registrada</span>}
+                        {c.direccion || <span style={{ color: 'var(--muted)' }}>Sin dirección</span>}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <span className="badge warning" style={{ fontSize: '0.95rem', fontWeight: 800 }}>
+                        <span className="badge warning" style={{ fontSize: '0.85rem', fontWeight: 800 }}>
                           ⭐ {pts} pts
                         </span>
                       </td>
@@ -245,14 +237,14 @@ export default function Clientes() {
                       </td>
                       <td style={{ textAlign: 'center', fontWeight: 600 }}>{nCompras}</td>
                       <td style={{ textAlign: 'right' }}>
-                        <div className="flex justify-end gap-2">
-                          <button className="secondary" style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }} title="Ver Historial" onClick={() => openHistorial(c)}>
+                        <div className="flex justify-end gap-1">
+                          <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} title="Ver Historial" onClick={() => openHistorial(c)}>
                             📜 Historial
                           </button>
-                          <button className="secondary" style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }} title="Editar Cliente" onClick={() => handleOpenClienteModal(c)}>
-                            ✏️ Editar
+                          <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} title="Editar" onClick={() => handleOpenClienteModal(c)}>
+                            ✏️
                           </button>
-                          <button className="danger" style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }} title="Eliminar Cliente" onClick={() => handleDeleteCliente(c.id)}>
+                          <button className="danger" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} title="Eliminar" onClick={() => handleDeleteCliente(c.id)}>
                             🗑️
                           </button>
                         </div>
@@ -262,7 +254,7 @@ export default function Clientes() {
                 })}
                 {filteredClientes.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="empty-state">No se encontraron clientes con el criterio de búsqueda.</td>
+                    <td colSpan="7" className="empty-state">No se encontraron clientes.</td>
                   </tr>
                 )}
               </tbody>
@@ -273,15 +265,15 @@ export default function Clientes() {
 
       {/* TAB 2: CATÁLOGO DE RECOMPENSAS */}
       {activeTab === 'recompensas' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ width: '100%' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" style={{ width: '100%' }}>
           {recompensas.map(r => {
             const cost = r.costo_puntos ?? r.puntos ?? 0;
             return (
               <div key={r.id} className="card flex-col justify-between gap-3 p-4" style={{ border: '1px solid var(--border)' }}>
                 <div>
                   <div className="flex justify-between items-start mb-2">
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{r.nombre}</h3>
-                    <span className="badge warning" style={{ fontSize: '0.95rem', fontWeight: 800 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>{r.nombre}</h3>
+                    <span className="badge warning" style={{ fontSize: '0.85rem', fontWeight: 800 }}>
                       ⭐ {cost} pts
                     </span>
                   </div>
@@ -305,8 +297,8 @@ export default function Clientes() {
       {/* MODAL CREAR / EDITAR CLIENTE */}
       {clienteModal.isOpen && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '450px', padding: '1.75rem', margin: 'auto 0' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '420px' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>
               {clienteModal.data ? '✏️ Editar Cliente' : '➕ Registrar Nuevo Cliente'}
             </h2>
             <form onSubmit={handleSaveCliente} className="flex-col gap-3">
@@ -352,12 +344,12 @@ export default function Clientes() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex justify-end gap-2 mt-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                 <button type="button" className="secondary flex-1" onClick={() => setClienteModal({ isOpen: false, data: null })}>
                   Cancelar
                 </button>
                 <button type="submit" className="primary flex-1">
-                  Guardar Cliente
+                  Guardar
                 </button>
               </div>
             </form>
@@ -368,42 +360,39 @@ export default function Clientes() {
       {/* MODAL HISTORIAL DE PUNTOS & COMPRAS */}
       {historialModal.isOpen && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '550px', padding: '1.75rem', margin: 'auto 0' }}>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '480px' }}>
             <div className="flex justify-between items-center border-b pb-2" style={{ borderColor: 'var(--border)' }}>
               <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Historial: {historialModal.cliente?.nombre}</h2>
-                <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Historial: {historialModal.cliente?.nombre}</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
                   📞 {historialModal.cliente?.telefono} {historialModal.cliente?.direccion && `| 📍 ${historialModal.cliente.direccion}`}
                 </p>
               </div>
-              <span className="badge warning" style={{ fontSize: '1rem', fontWeight: 800 }}>
+              <span className="badge warning" style={{ fontSize: '0.9rem', fontWeight: 800 }}>
                 ⭐ {historialModal.cliente?.puntos_acumulados || historialModal.cliente?.puntos || 0} pts
               </span>
             </div>
 
-            <div className="flex-col gap-2 overflow-y-auto" style={{ maxHeight: '350px' }}>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Movimientos de Puntos y Compras</h4>
+            <div className="flex-col gap-2 overflow-y-auto" style={{ maxHeight: '300px' }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 700 }}>Movimientos de Puntos y Compras</h4>
               {historialModal.history?.map((mov, idx) => (
-                <div key={idx} className="flex justify-between items-center p-2.5 rounded card" style={{ background: 'var(--surface-2)' }}>
+                <div key={idx} className="flex justify-between items-center p-2 rounded card" style={{ background: 'var(--surface-2)' }}>
                   <div>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{mov.descripcion || 'Movimiento de Puntos'}</span>
-                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted)' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{mov.descripcion || 'Movimiento de Puntos'}</span>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--muted)' }}>
                       {new Date(mov.fecha || Date.now()).toLocaleDateString('es-CL')}
                     </span>
                   </div>
-                  <span className="mono" style={{ fontWeight: 800, color: mov.puntos >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                  <span className="mono font-bold" style={{ fontSize: '0.85rem', color: mov.puntos >= 0 ? 'var(--green)' : 'var(--red)' }}>
                     {mov.puntos >= 0 ? `+${mov.puntos}` : mov.puntos} pts
                   </span>
                 </div>
               ))}
-              {(!historialModal.history || historialModal.history.length === 0) && (
-                <div className="empty-state">No hay movimientos registrados para este cliente.</div>
-              )}
             </div>
 
             <div className="flex justify-end pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
               <button className="primary" onClick={() => setHistorialModal({ isOpen: false, cliente: null, history: null })}>
-                Cerrar Historial
+                Cerrar
               </button>
             </div>
           </div>
@@ -413,8 +402,8 @@ export default function Clientes() {
       {/* MODAL CREAR / EDITAR RECOMPENSA */}
       {recompensaModal.isOpen && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '450px', padding: '1.75rem', margin: 'auto 0' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '420px' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>
               {recompensaModal.data ? '✏️ Editar Recompensa' : '🎁 Nueva Recompensa'}
             </h2>
             <form onSubmit={handleSaveRecompensa} className="flex-col gap-3">
@@ -450,12 +439,12 @@ export default function Clientes() {
                 ></textarea>
               </div>
 
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex justify-end gap-2 mt-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                 <button type="button" className="secondary flex-1" onClick={() => setRecompensaModal({ isOpen: false, data: null })}>
                   Cancelar
                 </button>
                 <button type="submit" className="primary flex-1">
-                  Guardar Recompensa
+                  Guardar
                 </button>
               </div>
             </form>

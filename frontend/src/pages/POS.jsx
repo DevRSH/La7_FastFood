@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { api, formatCLP, client } from '../api/client';
+import { api, formatCLP } from '../api/client';
 
-const mockProducts = [];
 const mockModifiers = [];
 
 const normalizeProduct = (p) => {
@@ -38,7 +37,6 @@ export default function POS() {
       const cached = localStorage.getItem('la7_productos_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        // Si el caché tiene los productos mock de desarrollo, limpiarlo
         if (Array.isArray(parsed) && parsed.some(p => ['Classic Burger','Cheese Burger','Papas Fritas Chicas','Coca Cola 500ml','Combo 1','Empanada Queso'].includes(p.nombre))) {
           localStorage.removeItem('la7_productos_cache');
           return [];
@@ -52,10 +50,12 @@ export default function POS() {
   const categories = ['Todas', ...Array.from(new Set(products.map(p => p.categoria)))];
   const [activeCategory, setActiveCategory] = useState('Todas');
   
+  // Mobile Tab State: 'catalog' | 'ticket'
+  const [mobileTab, setMobileTab] = useState('catalog');
+
   const [cart, setCart] = useState([]);
   const [orderType, setOrderType] = useState('Local'); // 'Local' | 'Delivery'
 
-  // Business config state for delivery calculations
   const [businessConfig, setBusinessConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('la7_config');
@@ -82,7 +82,6 @@ export default function POS() {
   const [ticket, setTicket] = useState(null);
 
   useEffect(() => {
-    // Fetch products from backend
     api.productos.getAll()
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -93,7 +92,6 @@ export default function POS() {
       })
       .catch(err => console.log('Usando caché de productos local:', err));
 
-    // Fetch live config from server
     api.config?.get?.()
       .then(cfg => {
         if (cfg && typeof cfg === 'object') {
@@ -112,7 +110,6 @@ export default function POS() {
         setCustomer(data);
         setShowQuickCreate(false);
       } else {
-        // Customer not found, open quick create modal
         setQuickCustomerForm({ nombre: '', telefono: phone, direccion: '' });
         setShowQuickCreate(true);
       }
@@ -135,7 +132,6 @@ export default function POS() {
       setCustomer(created);
       setShowQuickCreate(false);
     } catch (err) {
-      console.error(err);
       const fallback = { id: Date.now(), ...quickCustomerForm, puntos_acumulados: 0 };
       setCustomer(fallback);
       setShowQuickCreate(false);
@@ -176,9 +172,9 @@ export default function POS() {
     setCart(cart.filter(item => item.cartId !== cartId));
   };
 
+  const totalItemsCount = cart.reduce((sum, i) => sum + i.qty, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitTotal * item.qty, 0);
 
-  // Dynamic delivery fee calculation based strictly on Configuracion
   const calcDeliveryFee = () => {
     if (orderType !== 'Delivery') return 0;
     const { reparto_tipo, reparto_valor } = businessConfig;
@@ -188,7 +184,7 @@ export default function POS() {
     } else if (reparto_tipo === 'porcentaje') {
       return Math.round(subtotal * ((Number(reparto_valor) || 0) / 100));
     }
-    return 0; // 'ninguno'
+    return 0;
   };
 
   const currentDeliveryFee = calcDeliveryFee();
@@ -216,7 +212,7 @@ export default function POS() {
       };
 
       const response = await api.ventas.create(payload).catch((err) => {
-        console.warn('API de ventas no disponible, usando fallback local de ticket:', err);
+        console.warn('API de ventas no disponible, usando fallback local:', err);
         const num = Math.floor(Math.random() * 1000).toString().padStart(5, '0');
         return {
           numero_ticket: `T-${num}`,
@@ -249,18 +245,14 @@ export default function POS() {
       try {
         const saved = JSON.parse(localStorage.getItem('la7_ventas_locales') || '[]');
         localStorage.setItem('la7_ventas_locales', JSON.stringify([newTicket, ...saved]));
-      } catch (e) {
-        console.error('Error guardando venta local', e);
-      }
+      } catch (e) {}
 
       setTicket(newTicket);
       setShowPayment(false);
     } catch (err) {
-      console.error('Error al procesar la venta:', err);
       alert('Error al registrar la venta en el sistema.');
     }
   };
-
 
   const resetVenta = () => {
     setCart([]);
@@ -268,6 +260,7 @@ export default function POS() {
     setPhone('');
     setTicket(null);
     setOrderType('Local');
+    setMobileTab('catalog');
   };
 
   const toggleModifier = (mod) => {
@@ -281,173 +274,214 @@ export default function POS() {
   const filteredProducts = activeCategory === 'Todas' ? products : products.filter(p => p.categoria === activeCategory);
 
   return (
-    <div className="h-full flex gap-4 p-4 animate-slide-up" style={{ minHeight: '90vh' }}>
-      {/* Left/Top Category Bar + Center Grid */}
-      <div className="flex-col gap-4 flex-1">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map(cat => (
-            <button 
-              key={cat} 
-              className={`pos-btn ${activeCategory === cat ? 'primary' : 'secondary'}`}
-              onClick={() => setActiveCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 150px)' }}>
-          {filteredProducts.map(p => (
-            <div 
-              key={p.id} 
-              className={`card flex-col items-center justify-center p-4 cursor-pointer relative ${p.stock <= 0 ? 'opacity-50' : ''}`}
-              onClick={() => addToCart(p)}
-              style={{ minHeight: '120px', textAlign: 'center' }}
-            >
-              <span style={{ fontSize: '3rem' }}>{p.icono}</span>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: '0.5rem' }}>{p.nombre}</h3>
-              <p className="mono" style={{ color: 'var(--cyan)', fontWeight: 700 }}>{formatCLP(p.precio)}</p>
-              {p.stock <= 0 && (
-                <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 'var(--radius)' }}>
-                  <span className="badge danger" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>Agotado</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+    <div className="flex-col gap-4 animate-slide-up" style={{ minHeight: '85vh' }}>
+      
+      {/* Mobile Screen Tab Switcher (< 1024px) */}
+      <div className="flex gap-2 hidden-desktop p-1 rounded card" style={{ backgroundColor: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+        <button
+          className={`flex-1 ${mobileTab === 'catalog' ? 'primary' : 'ghost'}`}
+          onClick={() => setMobileTab('catalog')}
+          style={{ fontSize: '0.9rem', padding: '0.5rem' }}
+        >
+          🍔 Catálogo ({filteredProducts.length})
+        </button>
+        <button
+          className={`flex-1 ${mobileTab === 'ticket' ? 'primary' : 'ghost'}`}
+          onClick={() => setMobileTab('ticket')}
+          style={{ fontSize: '0.9rem', padding: '0.5rem' }}
+        >
+          🛒 Ticket ({totalItemsCount}) - {formatCLP(total)}
+        </button>
       </div>
 
-      {/* Right Cart Panel */}
-      <div className="card flex-col flex" style={{ width: '360px', display: 'flex', gap: '1rem' }}>
-        <div className="flex justify-between items-center border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Ticket</h2>
+      {/* Main Responsive Grid Container */}
+      <div className="flex pos-container-responsive gap-4 flex-1">
+        
+        {/* Left/Main Section: Categories & Products Grid */}
+        <div 
+          className="flex-col gap-4 flex-1"
+          style={{ display: mobileTab === 'catalog' || window.innerWidth >= 1024 ? 'flex' : 'none' }}
+        >
+          {/* Categories Horizontal Scroll */}
+          <div className="flex gap-2 overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {categories.map(cat => (
+              <button 
+                key={cat} 
+                className={`pos-btn ${activeCategory === cat ? 'primary' : 'secondary'}`}
+                onClick={() => setActiveCategory(cat)}
+                style={{ whiteSpace: 'nowrap', fontSize: '0.9rem' }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           
-          <div className="flex gap-1" style={{ background: 'var(--surface-3)', padding: '2px', borderRadius: 'var(--radius-sm)' }}>
-            <button
-              className={orderType === 'Local' ? 'primary' : 'ghost'}
-              onClick={() => setOrderType('Local')}
-              style={{ padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}
-            >
-              🏪 Local
-            </button>
-            <button
-              className={orderType === 'Delivery' ? 'primary' : 'ghost'}
-              onClick={() => setOrderType('Delivery')}
-              style={{ padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}
-            >
-              🛵 Delivery
-            </button>
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 overflow-y-auto pr-1" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            {filteredProducts.map(p => (
+              <div 
+                key={p.id} 
+                className={`card flex-col items-center justify-center p-3 cursor-pointer relative ${p.stock <= 0 ? 'opacity-50' : ''}`}
+                onClick={() => addToCart(p)}
+                style={{ minHeight: '110px', textAlign: 'center' }}
+              >
+                <span style={{ fontSize: '2.5rem' }}>{p.icono}</span>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '0.3rem' }}>{p.nombre}</h3>
+                <p className="mono" style={{ color: 'var(--cyan)', fontWeight: 700, fontSize: '0.9rem' }}>{formatCLP(p.precio)}</p>
+                {p.stock <= 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 'var(--radius)' }}>
+                    <span className="badge danger" style={{ fontSize: '0.85rem' }}>Agotado</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Customer Search & Card */}
-        {!customer ? (
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Teléfono Cliente (+569...)" 
-              value={phone} 
-              onChange={e => setPhone(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
-            />
-            <button className="secondary" title="Buscar Cliente por Teléfono" onClick={handlePhoneSearch}>🔍</button>
-          </div>
-        ) : (
-          <div className="flex-col gap-1 p-2.5 rounded card" style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-            <div className="flex justify-between items-center">
-              <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>👤 {customer.nombre}</span>
-              <div className="flex items-center gap-1">
-                <span className="badge warning" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }}>
-                  ⭐ {customer.puntos_acumulados ?? customer.puntos ?? 0} pts
-                </span>
-                <button className="ghost danger" style={{ padding: '0.1rem 0.3rem', fontSize: '0.8rem' }} onClick={() => setCustomer(null)}>✕</button>
-              </div>
+        {/* Right Section: Ticket / Cart Panel */}
+        <div 
+          className="card pos-cart-panel flex-col flex gap-3" 
+          style={{ 
+            width: '360px', 
+            display: mobileTab === 'ticket' || window.innerWidth >= 1024 ? 'flex' : 'none' 
+          }}
+        >
+          <div className="flex justify-between items-center border-b pb-2" style={{ borderColor: 'var(--border)' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Ticket de Venta</h2>
+            
+            <div className="flex gap-1" style={{ background: 'var(--surface-3)', padding: '2px', borderRadius: 'var(--radius-sm)' }}>
+              <button
+                className={orderType === 'Local' ? 'primary' : 'ghost'}
+                onClick={() => setOrderType('Local')}
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+              >
+                🏪 Local
+              </button>
+              <button
+                className={orderType === 'Delivery' ? 'primary' : 'ghost'}
+                onClick={() => setOrderType('Delivery')}
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+              >
+                🛵 Delivery
+              </button>
             </div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--cyan)', fontWeight: 600 }} className="mono">
-              📞 {customer.telefono}
-            </span>
-            {customer.direccion && (
-              <span style={{ fontSize: '0.8rem', color: orderType === 'Delivery' ? 'var(--amber)' : 'var(--text-secondary)', fontWeight: orderType === 'Delivery' ? 700 : 400 }}>
-                📍 {customer.direccion}
+          </div>
+
+          {/* Customer Search & Card */}
+          {!customer ? (
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Teléfono Cliente (+569...)" 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handlePhoneSearch()}
+                style={{ fontSize: '0.85rem' }}
+              />
+              <button className="secondary" title="Buscar Cliente" onClick={handlePhoneSearch} style={{ minWidth: '44px' }}>🔍</button>
+            </div>
+          ) : (
+            <div className="flex-col gap-1 p-2 rounded card" style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              <div className="flex justify-between items-center">
+                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>👤 {customer.nombre}</span>
+                <div className="flex items-center gap-1">
+                  <span className="badge warning" style={{ fontSize: '0.75rem', padding: '0.15rem 0.4rem' }}>
+                    ⭐ {customer.puntos_acumulados ?? customer.puntos ?? 0} pts
+                  </span>
+                  <button className="ghost danger" style={{ padding: '0.1rem 0.3rem', fontSize: '0.75rem' }} onClick={() => setCustomer(null)}>✕</button>
+                </div>
+              </div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--cyan)', fontWeight: 600 }} className="mono">
+                📞 {customer.telefono}
               </span>
+              {customer.direccion && (
+                <span style={{ fontSize: '0.8rem', color: orderType === 'Delivery' ? 'var(--amber)' : 'var(--text-secondary)', fontWeight: orderType === 'Delivery' ? 700 : 400 }}>
+                  📍 {customer.direccion}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Cart Items List */}
+          <div className="flex-col flex-1 overflow-y-auto gap-2" style={{ maxHeight: '350px' }}>
+            {cart.map(item => (
+              <div key={item.cartId} className="flex-col gap-1 p-2 border-b" style={{ borderColor: 'var(--border-light)' }}>
+                <div className="flex justify-between items-center">
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.nombre}</span>
+                  <span className="mono" style={{ fontWeight: 700, fontSize: '0.9rem' }}>{formatCLP(item.unitTotal * item.qty)}</span>
+                </div>
+                {item.modifiers.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {item.modifiers.map(m => (
+                      <span key={m.id} className="badge info" style={{ fontSize: '0.7rem' }}>{m.label}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-between items-center mt-1">
+                  <div className="flex items-center gap-2">
+                    <button className="secondary pos-touch-btn" aria-label="Disminuir" onClick={() => updateQty(item.cartId, -1)}>-</button>
+                    <span className="mono font-bold" style={{ minWidth: '20px', textAlign: 'center' }}>{item.qty}</span>
+                    <button className="secondary pos-touch-btn" aria-label="Aumentar" onClick={() => updateQty(item.cartId, 1)}>+</button>
+                  </div>
+                  <button className="danger ghost pos-touch-btn" aria-label="Eliminar" onClick={() => removeItem(item.cartId)}>🗑️</button>
+                </div>
+              </div>
+            ))}
+            {cart.length === 0 && (
+              <div className="empty-state">El carrito está vacío</div>
             )}
           </div>
-        )}
 
-        <div className="flex-col flex-1 overflow-y-auto gap-2">
-          {cart.map(item => (
-            <div key={item.cartId} className="flex-col gap-1 p-2 border-b" style={{ borderColor: 'var(--border-light)' }}>
-              <div className="flex justify-between items-center">
-                <span style={{ fontWeight: 600 }}>{item.nombre}</span>
-                <span className="mono" style={{ fontWeight: 700 }}>{formatCLP(item.unitTotal * item.qty)}</span>
+          {/* Cart Totals & Checkout Button */}
+          <div className="flex-col gap-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+              <span className="mono font-bold">{formatCLP(subtotal)}</span>
+            </div>
+
+            {orderType === 'Delivery' && (
+              <div className="flex justify-between items-center p-2 card" style={{ background: 'var(--amber-dim)', border: '1px solid #fef08a' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--amber)' }}>
+                  🛵 Delivery ({businessConfig.reparto_tipo === 'fijo' ? 'Fijo' : `${businessConfig.reparto_valor}%`}):
+                </span>
+                <span className="mono" style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--amber)' }}>
+                  +{formatCLP(currentDeliveryFee)}
+                </span>
               </div>
-              {item.modifiers.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {item.modifiers.map(m => (
-                    <span key={m.id} className="badge info" style={{ fontSize: '0.7rem' }}>{m.label}</span>
-                  ))}
-                </div>
-              )}
-              <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center gap-2">
-                  <button className="secondary pos-touch-btn" aria-label="Disminuir cantidad" onClick={() => updateQty(item.cartId, -1)}>-</button>
-                  <span className="mono" style={{ fontWeight: 700, minWidth: '24px', textAlign: 'center', fontSize: '1.1rem' }}>{item.qty}</span>
-                  <button className="secondary pos-touch-btn" aria-label="Aumentar cantidad" onClick={() => updateQty(item.cartId, 1)}>+</button>
-                </div>
-                <button className="danger ghost pos-touch-btn" aria-label="Eliminar producto" onClick={() => removeItem(item.cartId)}>🗑️</button>
-              </div>
-            </div>
-          ))}
-          {cart.length === 0 && (
-            <div className="empty-state">El carrito está vacío</div>
-          )}
-        </div>
+            )}
 
-        <div className="flex-col gap-2 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--text-secondary)' }}>Subtotal Productos</span>
-            <span className="mono" style={{ fontWeight: 600 }}>{formatCLP(subtotal)}</span>
+            <div className="flex justify-between items-center pt-1" style={{ borderTop: '1.5px solid var(--border)', fontSize: '1.25rem', fontWeight: 800 }}>
+              <span>TOTAL</span>
+              <span className="mono" style={{ color: 'var(--cyan)' }}>{formatCLP(total)}</span>
+            </div>
+            
+            <button 
+              className="primary pos-btn w-full mt-1" 
+              disabled={cart.length === 0}
+              onClick={() => setShowPayment(true)}
+            >
+              COBRAR {formatCLP(total)}
+            </button>
           </div>
-
-          {/* Delivery Cost Line Item */}
-          {orderType === 'Delivery' && (
-            <div className="flex justify-between items-center p-2 card" style={{ background: 'var(--amber-dim)', border: '1px solid #fef08a' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--amber)' }}>
-                🛵 Delivery ({businessConfig.reparto_tipo === 'fijo' ? 'Tarifa Fija' : businessConfig.reparto_tipo === 'porcentaje' ? `${businessConfig.reparto_valor}%` : 'Sin Costo'}):
-              </span>
-              <span className="mono" style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--amber)' }}>
-                +{formatCLP(currentDeliveryFee)}
-              </span>
-            </div>
-          )}
-
-          {discount > 0 && (
-            <div className="flex justify-between" style={{ color: 'var(--green)' }}>
-              <span>Descuento Recompensa</span>
-              <span className="mono">-{formatCLP(discount)}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-2" style={{ borderTop: '1.5px solid var(--border)', fontSize: '1.4rem', fontWeight: 800 }}>
-            <span>TOTAL</span>
-            <span className="mono" style={{ color: 'var(--cyan)' }}>{formatCLP(total)}</span>
-          </div>
-          
-          <button 
-            className="primary pos-btn w-full mt-2" 
-            disabled={cart.length === 0}
-            onClick={() => setShowPayment(true)}
-          >
-            PAGAR {formatCLP(total)}
-          </button>
         </div>
       </div>
+
+      {/* Floating Action Button (FAB) Mobile Cart */}
+      {cart.length > 0 && mobileTab === 'catalog' && (
+        <button 
+          className="pos-fab" 
+          onClick={() => setMobileTab('ticket')}
+        >
+          <span>🛒 {totalItemsCount} ítems</span>
+          <span className="mono">{formatCLP(total)}</span>
+        </button>
+      )}
 
       {/* MODAL CREAR CLIENTE RÁPIDO POS */}
       {showQuickCreate && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '400px', padding: '1.5rem', margin: 'auto 0' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>➕ Registrar Nuevo Cliente</h3>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '420px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>➕ Registrar Nuevo Cliente</h3>
             <form onSubmit={handleQuickCreateSave} className="flex-col gap-3">
               <div className="form-group mb-0">
                 <label>Nombre del Cliente *</label>
@@ -489,8 +523,8 @@ export default function POS() {
       {/* MODAL MODIFICADORES */}
       {selectedProduct && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '400px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Personalizar {selectedProduct.nombre}</h2>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '420px' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Personalizar {selectedProduct.nombre}</h2>
             <div className="flex-col gap-2">
               {mockModifiers.map(mod => {
                 const isSelected = selectedModifiers.find(m => m.id === mod.id);
@@ -517,8 +551,8 @@ export default function POS() {
       {/* MODAL PAGO */}
       {showPayment && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '500px' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Cobro de Ticket ({orderType})</h2>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '480px' }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>Cobro de Ticket ({orderType})</h2>
             
             <div className="flex gap-2">
               {['Efectivo', 'Tarjeta', 'Transferencia'].map(method => (
@@ -526,6 +560,7 @@ export default function POS() {
                   key={method} 
                   className={`flex-1 ${paymentMethod === method ? 'primary' : 'secondary'}`}
                   onClick={() => setPaymentMethod(method)}
+                  style={{ fontSize: '0.85rem' }}
                 >
                   {method}
                 </button>
@@ -533,33 +568,34 @@ export default function POS() {
             </div>
 
             {paymentMethod === 'Efectivo' && (
-              <div className="flex-col gap-4">
+              <div className="flex-col gap-3">
                 <div className="grid grid-cols-3 gap-2">
                   {[1000, 2000, 5000, 10000, 20000].map(amount => (
                     <button 
                       key={amount} 
                       className="secondary pos-btn mono"
                       onClick={() => setCashAmount(amount.toString())}
+                      style={{ fontSize: '0.9rem' }}
                     >
                       {formatCLP(amount)}
                     </button>
                   ))}
-                  <button className="primary pos-btn mono" onClick={() => setCashAmount(total.toString())}>Exacto</button>
+                  <button className="primary pos-btn mono" onClick={() => setCashAmount(total.toString())} style={{ fontSize: '0.9rem' }}>Exacto</button>
                 </div>
                 
                 <input 
                   type="number" 
                   className="mono text-center" 
-                  style={{ fontSize: '1.5rem', fontWeight: 800 }} 
+                  style={{ fontSize: '1.35rem', fontWeight: 800 }} 
                   placeholder="Monto Recibido"
                   value={cashAmount}
                   onChange={e => setCashAmount(e.target.value)}
                 />
                 
                 {cashAmount && parseInt(cashAmount) >= total && (
-                  <div className="text-center p-4 rounded card" style={{ backgroundColor: 'var(--green-dim)', border: '1px solid #bbf7d0' }}>
-                    <p style={{ color: 'var(--green)', fontWeight: 600 }}>Vuelto a Entregar</p>
-                    <p className="mono" style={{ fontSize: '2.5rem', color: 'var(--green)', fontWeight: 800 }}>
+                  <div className="text-center p-3 rounded card" style={{ backgroundColor: 'var(--green-dim)', border: '1px solid #bbf7d0' }}>
+                    <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.85rem' }}>Vuelto a Entregar</p>
+                    <p className="mono" style={{ fontSize: '2rem', color: 'var(--green)', fontWeight: 800 }}>
                       {formatCLP(parseInt(cashAmount) - total)}
                     </p>
                   </div>
@@ -584,9 +620,9 @@ export default function POS() {
       {/* TICKET POST-VENTA */}
       {ticket && (
         <div className="modal-overlay">
-          <div className="card text-center flex-col gap-3" style={{ width: '380px', background: '#f4f1e8', border: '1px solid #d4cebe' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b1d1f' }}>{businessConfig.nombre_negocio || 'La 7 FastFood'}</h2>
-            <p className="mono" style={{ color: '#666' }}>Ticket {ticket.numero} ({ticket.orderType})</p>
+          <div className="modal-content text-center flex-col gap-3" style={{ maxWidth: '380px', background: '#f4f1e8', border: '1px solid #d4cebe' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1b1d1f' }}>{businessConfig.nombre_negocio || 'La 7 FastFood'}</h2>
+            <p className="mono" style={{ color: '#666', fontSize: '0.85rem' }}>Ticket {ticket.numero} ({ticket.orderType})</p>
 
             {ticket.customer && (
               <div className="text-left text-xs p-2 rounded" style={{ background: '#e2e8f0', color: '#1e293b' }}>
@@ -596,7 +632,7 @@ export default function POS() {
               </div>
             )}
             
-            <div className="flex-col gap-2 text-left border-y py-3" style={{ borderColor: '#999', fontFamily: 'JetBrains Mono', color: '#1b1d1f' }}>
+            <div className="flex-col gap-2 text-left border-y py-3" style={{ borderColor: '#999', fontFamily: 'JetBrains Mono', color: '#1b1d1f', fontSize: '0.85rem' }}>
               {ticket.items.map(item => (
                 <div key={item.cartId} className="flex justify-between">
                   <span>{item.qty}x {item.nombre}</span>
@@ -611,18 +647,18 @@ export default function POS() {
               )}
             </div>
 
-            <div className="flex justify-between font-bold text-xl" style={{ color: '#1b1d1f' }}>
+            <div className="flex justify-between font-bold text-lg" style={{ color: '#1b1d1f' }}>
               <span>TOTAL</span>
               <span className="mono">{formatCLP(ticket.total)}</span>
             </div>
 
-            <div className="flex justify-between text-sm" style={{ color: '#555' }}>
+            <div className="flex justify-between text-xs" style={{ color: '#555' }}>
               <span>Pago: {ticket.paymentMethod}</span>
               {ticket.change > 0 && <span>Vuelto: {formatCLP(ticket.change)}</span>}
             </div>
 
             {ticket.pointsEarned > 0 && customer && (
-              <div className="badge success" style={{ background: '#dcfce7', color: '#15803d' }}>
+              <div className="badge success" style={{ background: '#dcfce7', color: '#15803d', fontSize: '0.75rem' }}>
                 +{ticket.pointsEarned} Puntos Acumulados para {customer.nombre}
               </div>
             )}

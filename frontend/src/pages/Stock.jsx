@@ -6,9 +6,6 @@ import {
   AlertCircle, History, Box, DollarSign, X
 } from 'lucide-react';
 
-const MOCK_INSUMOS = [];
-const MOCK_MOVIMIENTOS = [];
-
 export default function Stock() {
   const [activeTab, setActiveTab] = useState('estado');
   const [insumos, setInsumos] = useState([]);
@@ -66,9 +63,9 @@ export default function Stock() {
   const kpis = calcularKPIs();
 
   const getStockStatus = (actual, minimo) => {
-    if (actual === 0 || actual < minimo * 0.5) return { label: 'Crítico', badgeClass: 'danger', icon: <AlertTriangle size={16} /> };
-    if (actual <= minimo) return { label: 'Alerta', badgeClass: 'warning', icon: <AlertCircle size={16} /> };
-    return { label: 'OK', badgeClass: 'success', icon: <CheckCircle2 size={16} /> };
+    if (actual === 0 || actual < minimo * 0.5) return { label: 'Crítico', badgeClass: 'danger', icon: <AlertTriangle size={14} /> };
+    if (actual <= minimo) return { label: 'Alerta', badgeClass: 'warning', icon: <AlertCircle size={14} /> };
+    return { label: 'OK', badgeClass: 'success', icon: <CheckCircle2 size={14} /> };
   };
 
   const handleAjusteSubmit = async (e) => {
@@ -118,74 +115,77 @@ export default function Stock() {
   }
 
   return (
-    <div className="flex-col h-full animate-slide-up gap-4 pb-20">
+    <div className="flex-col h-full animate-slide-up gap-4 pb-20" style={{ padding: '0.5rem' }}>
       <div className="flex items-center gap-3">
         <span style={{ fontSize: '2rem' }}>📦</span>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Inventario y Control de Stock</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Inventario y Control de Stock</h1>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card flex items-center gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="card flex items-center gap-3">
           <div style={{ padding: '0.75rem', background: 'var(--cyan-dim)', color: 'var(--cyan)', borderRadius: 'var(--radius-sm)' }}>
-            <DollarSign size={28} />
+            <DollarSign size={24} />
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Valorizado Total</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text)' }}>{formatCLP(kpis.valorTotal)}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Valorizado Total</p>
+            <p className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text)' }}>{formatCLP(kpis.valorTotal)}</p>
           </div>
         </div>
 
-        <div className="card flex items-center gap-4">
+        <div className="card flex items-center gap-3">
           <div style={{ padding: '0.75rem', background: 'var(--surface-3)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)' }}>
-            <Box size={28} />
+            <Box size={24} />
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Insumos Registrados</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text)' }}>{kpis.totalInsumos}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Insumos Registrados</p>
+            <p className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text)' }}>{kpis.totalInsumos}</p>
           </div>
         </div>
 
-        <div className="card flex items-center gap-4" style={{ borderLeft: '4px solid var(--red)' }}>
+        <div className="card flex items-center gap-3" style={{ borderLeft: '4px solid var(--red)' }}>
           <div style={{ padding: '0.75rem', background: 'var(--red-dim)', color: 'var(--red)', borderRadius: 'var(--radius-sm)' }}>
-            <AlertTriangle size={28} />
+            <AlertTriangle size={24} />
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>En Alerta Crítica</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--red)' }}>{kpis.alertas}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>En Alerta Crítica</p>
+            <p className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--red)' }}>{kpis.alertas}</p>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 p-1" style={{ background: 'var(--surface-3)', borderRadius: 'var(--radius-sm)', width: 'fit-content', marginTop: '0.5rem' }}>
+      <div className="flex flex-wrap gap-2 p-1" style={{ background: 'var(--surface-3)', borderRadius: 'var(--radius-sm)', width: 'fit-content' }}>
         <button
           onClick={() => setActiveTab('estado')}
           className={activeTab === 'estado' ? 'primary' : 'ghost'}
+          style={{ fontSize: '0.85rem' }}
         >
-          <Package size={18} />
+          <Package size={16} />
           Estado de Stock
         </button>
         <button
           onClick={() => setActiveTab('compra')}
           className={activeTab === 'compra' ? 'primary' : 'ghost'}
+          style={{ fontSize: '0.85rem' }}
         >
-          <ShoppingCart size={18} />
+          <ShoppingCart size={16} />
           Registrar Compra
         </button>
         <button
           onClick={() => setActiveTab('movimientos')}
           className={activeTab === 'movimientos' ? 'primary' : 'ghost'}
+          style={{ fontSize: '0.85rem' }}
         >
-          <History size={18} />
+          <History size={16} />
           Historial
         </button>
       </div>
 
       {/* TABS CONTENT */}
-      <div className="mt-2 flex-1">
+      <div className="mt-1 flex-1">
         {activeTab === 'estado' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {insumos.map((insumo) => {
               const status = getStockStatus(insumo.stock_actual, insumo.stock_minimo);
               const percent = Math.min((insumo.stock_actual / (insumo.stock_minimo * 2)) * 100, 100);
@@ -194,19 +194,19 @@ export default function Stock() {
                 <div key={insumo.id} className="card flex-col justify-between gap-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{insumo.nombre}</h3>
-                      <p className="mono" style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.2rem' }}>CPP: {formatCLP(insumo.costo_promedio)}</p>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{insumo.nombre}</h3>
+                      <p className="mono" style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.1rem' }}>CPP: {formatCLP(insumo.costo_promedio)}</p>
                     </div>
-                    <span className={`badge ${status.badgeClass}`}>
+                    <span className={`badge ${status.badgeClass}`} style={{ fontSize: '0.75rem' }}>
                       {status.icon}
                       {status.label}
                     </span>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-sm mb-1" style={{ fontSize: '0.9rem' }}>
+                    <div className="flex justify-between text-xs mb-1">
                       <span style={{ color: 'var(--text-secondary)' }}>Stock Actual</span>
-                      <span className="mono" style={{ fontWeight: 700 }}>{insumo.stock_actual} {insumo.unidad_medida}</span>
+                      <span className="mono font-bold">{insumo.stock_actual} {insumo.unidad_medida}</span>
                     </div>
                     <div style={{ width: '100%', backgroundColor: 'var(--surface-3)', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
                       <div 
@@ -219,16 +219,17 @@ export default function Stock() {
                         }}
                       ></div>
                     </div>
-                    <div className="flex justify-between text-xs mt-1 mono" style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>
+                    <div className="flex justify-between text-xs mt-1 mono" style={{ color: 'var(--muted)', fontSize: '0.7rem' }}>
                       <span>Mínimo: {insumo.stock_minimo}</span>
                     </div>
                   </div>
 
                   <button 
                     onClick={() => { setSelectedInsumoAjuste(insumo); setShowAjusteModal(true); }}
-                    className="secondary w-full mt-2"
+                    className="secondary w-full mt-1"
+                    style={{ fontSize: '0.85rem' }}
                   >
-                    <ArrowDownUp size={16} />
+                    <ArrowDownUp size={14} />
                     Ajustar Stock
                   </button>
                 </div>
@@ -239,11 +240,11 @@ export default function Stock() {
 
         {activeTab === 'compra' && (
           <div className="card flex-col gap-4" style={{ maxWidth: '900px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }} className="flex items-center gap-2">
-              <ShoppingCart style={{ color: 'var(--cyan)' }} /> Registro de Compra a Proveedor
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }} className="flex items-center gap-2">
+              <ShoppingCart style={{ color: 'var(--cyan)' }} size={20} /> Registro de Compra a Proveedor
             </h2>
             
-            <form onSubmit={handleCompraSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleCompraSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex-col gap-3">
                 <div className="form-group mb-0">
                   <label>Insumo Comprado *</label>
@@ -302,46 +303,46 @@ export default function Stock() {
               </div>
 
               {/* Live CPP Preview Box */}
-              <div className="card flex-col justify-between p-5" style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--cyan)' }} className="flex items-center gap-2">
-                  <TrendingDown size={20} /> Impacto en Costos (CPP)
+              <div className="card flex-col justify-between p-4" style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--cyan)' }} className="flex items-center gap-2">
+                  <TrendingDown size={18} /> Impacto en Costos (CPP)
                 </h3>
                 
                 {selectedInsumoCompra ? (
-                  <div className="flex-col gap-3 my-4">
-                    <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)' }}>
+                  <div className="flex-col gap-2 my-3">
+                    <div className="flex justify-between border-b pb-1" style={{ borderColor: 'var(--border-light)', fontSize: '0.85rem' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>CPP Actual:</span>
                       <span className="mono font-bold">{formatCLP(selectedInsumoCompra.costo_promedio)}</span>
                     </div>
                     {qtyCompra > 0 && montoCompra > 0 ? (
                       <>
-                        <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)' }}>
+                        <div className="flex justify-between border-b pb-1" style={{ borderColor: 'var(--border-light)', fontSize: '0.85rem' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Costo Unitario Compra:</span>
                           <span className="mono font-bold" style={{ color: 'var(--amber)' }}>
                             {formatCLP(montoCompra / qtyCompra)}
                           </span>
                         </div>
-                        <div className="flex justify-between pt-2">
-                          <span style={{ fontWeight: 700 }}>NUEVO CPP PROYECTADO:</span>
-                          <span className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: newCPP > selectedInsumoCompra.costo_promedio ? 'var(--red)' : 'var(--green)' }}>
+                        <div className="flex justify-between pt-1">
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>NUEVO CPP PROYECTADO:</span>
+                          <span className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: newCPP > selectedInsumoCompra.costo_promedio ? 'var(--red)' : 'var(--green)' }}>
                             {formatCLP(newCPP)}
                           </span>
                         </div>
                       </>
                     ) : (
-                      <p className="empty-state text-sm" style={{ padding: '1rem 0' }}>Ingrese cantidad y monto total para calcular el nuevo Costo Promedio Ponderado.</p>
+                      <p className="empty-state text-xs" style={{ padding: '0.5rem 0' }}>Ingrese cantidad y monto total para calcular la variación.</p>
                     )}
                   </div>
                 ) : (
-                  <div className="empty-state text-sm">
-                    <Box size={36} style={{ margin: '0 auto 0.5rem', opacity: 0.3 }} />
-                    <p>Seleccione un insumo para ver la proyección de costos.</p>
+                  <div className="empty-state text-xs">
+                    <Box size={30} style={{ margin: '0 auto 0.5rem', opacity: 0.3 }} />
+                    <p>Seleccione un insumo para ver la proyección.</p>
                   </div>
                 )}
                 
-                <button type="submit" className="primary w-full mt-4" style={{ padding: '0.9rem' }}>
-                  <Save size={20} />
-                  Registrar Compra y Actualizar Stock
+                <button type="submit" className="primary w-full mt-3" style={{ padding: '0.75rem' }}>
+                  <Save size={18} />
+                  Registrar Compra
                 </button>
               </div>
             </form>
@@ -349,62 +350,60 @@ export default function Stock() {
         )}
 
         {activeTab === 'movimientos' && (
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Insumo</th>
-                    <th>Tipo</th>
-                    <th>Cantidad</th>
-                    <th>Stock Final</th>
-                    <th>Referencia / Notas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movimientos.map(mov => {
-                    const dateObj = new Date(mov.fecha);
-                    return (
-                      <tr key={mov.id}>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <div className="flex items-center gap-2">
-                            <Clock size={14} style={{ color: 'var(--muted)' }} />
-                            <span style={{ fontSize: '0.85rem' }}>{dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                          </div>
-                        </td>
-                        <td style={{ fontWeight: 700 }}>{mov.insumo_nombre}</td>
-                        <td>
-                          <span className={`badge ${
-                            mov.tipo === 'ENTRADA' ? 'success' : 
-                            mov.tipo === 'SALIDA' ? 'danger' : 'warning'
-                          }`}>
-                            {mov.tipo}
-                          </span>
-                        </td>
-                        <td className="mono" style={{ fontWeight: 700 }}>
-                          <span style={{ color: mov.cantidad > 0 ? 'var(--green)' : 'var(--red)' }}>
-                            {mov.cantidad > 0 ? '+' : ''}{mov.cantidad}
-                          </span>
-                        </td>
-                        <td className="mono" style={{ fontWeight: 800 }}>{mov.stock_resultante}</td>
-                        <td>
-                          <div>
-                            <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{mov.referencia}</p>
-                            {mov.notas && <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{mov.notas}</p>}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {movimientos.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="empty-state">No hay movimientos registrados.</td>
+          <div className="card table-container" style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Insumo</th>
+                  <th>Tipo</th>
+                  <th>Cantidad</th>
+                  <th>Stock Final</th>
+                  <th>Referencia / Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movimientos.map(mov => {
+                  const dateObj = new Date(mov.fecha);
+                  return (
+                    <tr key={mov.id}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div className="flex items-center gap-1">
+                          <Clock size={12} style={{ color: 'var(--muted)' }} />
+                          <span style={{ fontSize: '0.8rem' }}>{dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{mov.insumo_nombre}</td>
+                      <td>
+                        <span className={`badge ${
+                          mov.tipo === 'ENTRADA' ? 'success' : 
+                          mov.tipo === 'SALIDA' ? 'danger' : 'warning'
+                        }`} style={{ fontSize: '0.75rem' }}>
+                          {mov.tipo}
+                        </span>
+                      </td>
+                      <td className="mono" style={{ fontWeight: 700 }}>
+                        <span style={{ color: mov.cantidad > 0 ? 'var(--green)' : 'var(--red)' }}>
+                          {mov.cantidad > 0 ? '+' : ''}{mov.cantidad}
+                        </span>
+                      </td>
+                      <td className="mono" style={{ fontWeight: 800 }}>{mov.stock_resultante}</td>
+                      <td>
+                        <div>
+                          <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{mov.referencia}</p>
+                          {mov.notas && <p style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>{mov.notas}</p>}
+                        </div>
+                      </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+                {movimientos.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="empty-state">No hay movimientos registrados.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -412,23 +411,23 @@ export default function Stock() {
       {/* Modal Ajuste Stock */}
       {showAjusteModal && selectedInsumoAjuste && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '420px' }}>
+          <div className="modal-content flex-col gap-3" style={{ maxWidth: '400px' }}>
             <div className="flex justify-between items-center border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }} className="flex items-center gap-2">
-                <ArrowDownUp size={20} style={{ color: 'var(--cyan)' }}/> Ajuste Manual de Stock
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }} className="flex items-center gap-2">
+                <ArrowDownUp size={18} style={{ color: 'var(--cyan)' }}/> Ajuste Manual de Stock
               </h3>
               <button onClick={() => setShowAjusteModal(false)} className="ghost" style={{ padding: '0.2rem' }}>
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
             
             <form onSubmit={handleAjusteSubmit} className="flex-col gap-3">
               <div className="p-3 card" style={{ backgroundColor: 'var(--cyan-dim)', border: '1px solid #bae6fd' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--cyan-text)', fontWeight: 600 }}>Insumo Seleccionado</p>
-                <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)' }}>{selectedInsumoAjuste.nombre}</p>
-                <div className="flex justify-between mt-1 text-sm">
+                <p style={{ fontSize: '0.75rem', color: 'var(--cyan-text)', fontWeight: 600 }}>Insumo Seleccionado</p>
+                <p style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>{selectedInsumoAjuste.nombre}</p>
+                <div className="flex justify-between mt-1 text-xs">
                   <span style={{ color: 'var(--text-secondary)' }}>Stock Actual:</span>
-                  <span className="mono" style={{ fontWeight: 700 }}>{selectedInsumoAjuste.stock_actual} {selectedInsumoAjuste.unidad_medida}</span>
+                  <span className="mono font-bold">{selectedInsumoAjuste.stock_actual} {selectedInsumoAjuste.unidad_medida}</span>
                 </div>
               </div>
 

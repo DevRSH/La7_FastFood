@@ -37,7 +37,7 @@ export default function Dashboard() {
         const marginsData = await api.dashboard.getProductMargins().catch(() => [
           { name: 'Hamburguesa La 7 Special', margin: 68 },
           { name: 'Combo Churrasco Italiano', margin: 64 },
-          { name: 'Papas Cargaradas XL', margin: 72 },
+          { name: 'Papas Cargadas XL', margin: 72 },
           { name: 'Promo Familiar 4x', margin: 58 },
         ]);
         setProductMargins(marginsData);
@@ -87,37 +87,39 @@ export default function Dashboard() {
   const maxSales = Math.max(...(timeline.map(t => t.sales) || [0]), 1);
 
   return (
-    <div className="flex-col gap-6 animate-slide-up pb-10" style={{ padding: '1rem', color: 'var(--text)' }}>
-      <header className="flex justify-between items-center">
+    <div className="flex-col gap-6 animate-slide-up pb-10" style={{ padding: '0.5rem', color: 'var(--text)' }}>
+      
+      {/* Header Responsivo */}
+      <header className="flex flex-col-mobile justify-between items-start md:items-center gap-3">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Panel de Control & Indicadores</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Vista consolidada del rendimiento operativo y comercial del negocio.</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Panel de Control & Indicadores</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Vista consolidada del rendimiento operativo y comercial del negocio.</p>
         </div>
         <button 
           onClick={openExportModal}
-          className="primary flex items-center gap-2"
-          style={{ padding: '0.75rem 1.25rem', fontSize: '0.95rem', fontWeight: 700 }}
+          className="primary flex items-center justify-center gap-2 w-full-mobile"
+          style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', fontWeight: 700 }}
         >
-          <FileText size={20} />
-          📜 Generar Informe Formalización CORFO / Sercotec / Bancos
+          <FileText size={18} />
+          📜 Informe Formalización CORFO / SERCOTEC
         </button>
       </header>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Ventas Totales (Bruto)', value: formatCLP(kpis.ventasTotales), trend: kpis.trends?.ventas, icon: <DollarSign size={24} />, color: 'var(--cyan)' },
-          { label: 'Utilidad Real Estimada', value: formatCLP(kpis.utilidadReal), trend: kpis.trends?.utilidad, icon: <TrendingUp size={24} />, color: 'var(--green)' },
-          { label: 'Margen Promedio', value: `${kpis.margenPromedio}%`, trend: kpis.trends?.margen, icon: <Award size={24} />, color: 'var(--amber)' },
-          { label: 'Ticket Promedio', value: formatCLP(kpis.ticketPromedio), trend: kpis.trends?.ticket, icon: <FileText size={24} />, color: 'var(--purple, #a855f7)' }
+          { label: 'Ventas Totales (Bruto)', value: formatCLP(kpis.ventasTotales), trend: kpis.trends?.ventas, icon: <DollarSign size={22} />, color: 'var(--cyan)' },
+          { label: 'Utilidad Real Estimada', value: formatCLP(kpis.utilidadReal), trend: kpis.trends?.utilidad, icon: <TrendingUp size={22} />, color: 'var(--green)' },
+          { label: 'Margen Promedio', value: `${kpis.margenPromedio}%`, trend: kpis.trends?.margen, icon: <Award size={22} />, color: 'var(--amber)' },
+          { label: 'Ticket Promedio', value: formatCLP(kpis.ticketPromedio), trend: kpis.trends?.ticket, icon: <FileText size={22} />, color: 'var(--purple)' }
         ].map((kpi, idx) => (
-          <div key={idx} className="card flex items-center gap-4">
+          <div key={idx} className="card flex items-center gap-3">
             <div style={{ padding: '0.75rem', background: 'var(--surface-3)', color: kpi.color, borderRadius: 'var(--radius-sm)' }}>
               {kpi.icon}
             </div>
             <div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</p>
-              <p className="mono" style={{ fontSize: '1.5rem', fontWeight: 800 }}>{kpi.value}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</p>
+              <p className="mono" style={{ fontSize: '1.35rem', fontWeight: 800 }}>{kpi.value}</p>
               {kpi.trend !== undefined && (
                 <p style={{ fontSize: '0.75rem', color: kpi.trend >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>
                   {kpi.trend >= 0 ? '↑' : '↓'} {Math.abs(kpi.trend)}% vs mes anterior
@@ -131,8 +133,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Timeline */}
         <div className="card lg:col-span-2 flex-col gap-4">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Evolución de Ventas Semanales</h3>
-          <div className="flex items-end gap-3 mt-4" style={{ height: '220px', paddingBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Evolución de Ventas Semanales</h3>
+          <div className="flex items-end gap-2 mt-4" style={{ height: '200px', paddingBottom: '0.5rem' }}>
             {timeline.map((t, idx) => (
               <div key={idx} className="flex-col items-center flex-1 gap-2" style={{ height: '100%' }}>
                 <div className="w-full flex-1 flex items-end">
@@ -156,18 +158,18 @@ export default function Dashboard() {
         {/* Loyalty & Alerts */}
         <div className="flex-col gap-6">
           <div className="card flex-col gap-3">
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }} className="flex items-center gap-2">
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }} className="flex items-center gap-2">
               ⭐ Programa de Lealtad
             </h3>
-            <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)', fontSize: '0.9rem' }}>
+            <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)', fontSize: '0.85rem' }}>
               <span>Clientes Registrados:</span>
               <span className="mono font-bold">{loyaltySummary.totalClients}</span>
             </div>
-            <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)', fontSize: '0.9rem' }}>
+            <div className="flex justify-between border-b pb-2" style={{ borderColor: 'var(--border-light)', fontSize: '0.85rem' }}>
               <span>Puntos Emitidos:</span>
               <span className="mono font-bold" style={{ color: 'var(--amber)' }}>{loyaltySummary.pointsIssued} pts</span>
             </div>
-            <div className="flex justify-between pt-1" style={{ fontSize: '0.9rem' }}>
+            <div className="flex justify-between pt-1" style={{ fontSize: '0.85rem' }}>
               <span>Tasa de Canje:</span>
               <span className="mono font-bold" style={{ color: 'var(--green)' }}>{loyaltySummary.redemptionRate}%</span>
             </div>
@@ -180,7 +182,7 @@ export default function Dashboard() {
             {stockAlerts.length === 0 ? <p className="empty-state">Stock suficiente en todos los insumos.</p> : (
               <div className="flex-col gap-2">
                 {stockAlerts.map((alert, i) => (
-                  <div key={i} className="flex justify-between text-sm p-2 rounded" style={{ backgroundColor: 'var(--red-dim)', color: 'var(--red-text)' }}>
+                  <div key={i} className="flex justify-between text-xs p-2 rounded" style={{ backgroundColor: 'var(--red-dim)', color: 'var(--red-text)' }}>
                     <span>{alert.item}</span>
                     <span className="mono font-bold">{alert.current} / min {alert.min}</span>
                   </div>
@@ -193,12 +195,12 @@ export default function Dashboard() {
 
       {/* Product Margins */}
       <div className="card flex-col gap-4">
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Márgenes de Contribución por Producto</h3>
+        <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Márgenes de Contribución por Producto</h3>
         <div className="flex-col gap-3">
           {productMargins.map((prod, idx) => (
-            <div key={idx} className="flex items-center gap-4 text-sm">
+            <div key={idx} className="flex flex-col-mobile items-start md:items-center gap-2 text-xs md:text-sm">
               <div style={{ width: '200px', fontWeight: 600 }}>{prod.name}</div>
-              <div className="flex-1" style={{ backgroundColor: 'var(--surface-3)', height: '10px', borderRadius: '999px', overflow: 'hidden' }}>
+              <div className="flex-1 w-full" style={{ backgroundColor: 'var(--surface-3)', height: '10px', borderRadius: '999px', overflow: 'hidden' }}>
                 <div style={{ 
                   width: `${prod.margin}%`, 
                   background: getMarginColor(prod.margin),
@@ -206,7 +208,7 @@ export default function Dashboard() {
                   borderRadius: '999px'
                 }}></div>
               </div>
-              <div className="mono font-bold" style={{ width: '60px', textAlign: 'right', color: getMarginColor(prod.margin) }}>
+              <div className="mono font-bold" style={{ minWidth: '50px', textAlign: 'right', color: getMarginColor(prod.margin) }}>
                 {prod.margin}%
               </div>
             </div>
@@ -218,9 +220,9 @@ export default function Dashboard() {
       {isExportModalOpen && (
         loadingCorfo ? (
           <div className="modal-overlay">
-            <div className="card flex-col items-center gap-4 p-8">
+            <div className="modal-content flex-col items-center gap-4 p-8 text-center" style={{ maxWidth: '360px' }}>
               <div className="animate-spin" style={{ fontSize: '2rem' }}>🌀</div>
-              <p style={{ fontWeight: 600 }}>Generando Informe Financiero CORFO / Sercotec...</p>
+              <p style={{ fontWeight: 600 }}>Generando Informe Financiero CORFO / SERCOTEC...</p>
             </div>
           </div>
         ) : (

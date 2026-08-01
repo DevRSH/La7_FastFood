@@ -60,13 +60,11 @@ export default function Ventas() {
       
       const mergedMap = new Map();
 
-      // Prioridad a respuestas de la API
       (apiResponse || []).forEach(item => {
         const norm = normalizeVenta(item);
         mergedMap.set(norm.id, norm);
       });
 
-      // Agregar ventas guardadas localmente en el POS
       (localResponse || []).forEach(item => {
         const norm = normalizeVenta(item);
         if (!mergedMap.has(norm.id)) {
@@ -76,7 +74,6 @@ export default function Ventas() {
 
       let allVentas = Array.from(mergedMap.values());
 
-      // Fallback si no hay ventas registradas
       if (allVentas.length === 0) {
         allVentas = [
           { id: 1, numero_ticket: '#T-00001', fecha: new Date(Date.now() - 3600000).toISOString(), total: 15500, metodoPago: 'Tarjeta', estado: 'Completada', cliente: 'Juan Pérez', items: [] },
@@ -85,7 +82,6 @@ export default function Ventas() {
         ].map(normalizeVenta);
       }
 
-      // Aplicar filtros en memoria
       if (filtros.metodoPago) {
         allVentas = allVentas.filter(v => v.metodoPago.toLowerCase() === filtros.metodoPago.toLowerCase());
       }
@@ -103,7 +99,6 @@ export default function Ventas() {
 
       setVentas(allVentas);
 
-      // Calcular KPIs básicos
       let vDia = 0, tTickets = allVentas.length, vAnuladas = 0;
       allVentas.forEach(v => {
         if (v.estado === 'Completada') vDia += v.total;
@@ -137,12 +132,9 @@ export default function Ventas() {
     if (window.confirm('¿Está seguro de anular esta venta? Esta acción no se puede deshacer.')) {
       try {
         await api.ventas.anular(ventaId).catch(() => {});
-        
-        // Actualizar ventas locales en localStorage
         const saved = JSON.parse(localStorage.getItem('la7_ventas_locales') || '[]');
         const updated = saved.map(v => (v.id === ventaId ? { ...v, estado: 'Anulada', anulada: true } : v));
         localStorage.setItem('la7_ventas_locales', JSON.stringify(updated));
-        
         loadVentas();
       } catch (err) {
         console.error(err);
@@ -151,21 +143,21 @@ export default function Ventas() {
   };
 
   return (
-    <div className="flex-col gap-4 animate-slide-up" style={{ padding: '1rem', color: 'var(--text)' }}>
-      <div className="flex justify-between items-center">
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Historial y Registro de Ventas</h1>
-        <button className="secondary" onClick={loadVentas}>🔄 Actualizar Ventas</button>
+    <div className="flex-col gap-4 animate-slide-up" style={{ padding: '0.5rem', color: 'var(--text)' }}>
+      <div className="flex flex-col-mobile justify-between items-start md:items-center gap-2">
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Historial y Registro de Ventas</h1>
+        <button className="secondary w-full-mobile" onClick={loadVentas}>🔄 Actualizar Ventas</button>
       </div>
 
       {/* KPI Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card flex items-center gap-4">
           <div style={{ padding: '0.75rem', background: 'var(--cyan-dim)', color: 'var(--cyan)', borderRadius: 'var(--radius-sm)' }}>
             💰
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ventas del Día</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800 }}>{formatCLP(kpis.ventasDia)}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ventas del Día</p>
+            <p className="mono" style={{ fontSize: '1.4rem', fontWeight: 800 }}>{formatCLP(kpis.ventasDia)}</p>
           </div>
         </div>
 
@@ -174,8 +166,8 @@ export default function Ventas() {
             🧾
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total Tickets</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800 }}>{kpis.totalTickets}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total Tickets</p>
+            <p className="mono" style={{ fontSize: '1.4rem', fontWeight: 800 }}>{kpis.totalTickets}</p>
           </div>
         </div>
 
@@ -184,24 +176,24 @@ export default function Ventas() {
             ❌
           </div>
           <div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Anulaciones</p>
-            <p className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--red)' }}>{kpis.anulaciones}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Anulaciones</p>
+            <p className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--red)' }}>{kpis.anulaciones}</p>
           </div>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="card flex flex-wrap gap-4 items-center" style={{ backgroundColor: 'var(--surface-2)' }}>
-        <div className="form-group mb-0" style={{ flex: '1 1 180px' }}>
-          <label style={{ fontSize: '0.8rem' }}>Fecha Inicio</label>
+      <div className="card flex flex-wrap gap-3 items-center" style={{ backgroundColor: 'var(--surface-2)' }}>
+        <div className="form-group mb-0" style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: '0.75rem' }}>Fecha Inicio</label>
           <input type="date" name="fechaInicio" value={filtros.fechaInicio} onChange={handleFilterChange} />
         </div>
-        <div className="form-group mb-0" style={{ flex: '1 1 180px' }}>
-          <label style={{ fontSize: '0.8rem' }}>Fecha Fin</label>
+        <div className="form-group mb-0" style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: '0.75rem' }}>Fecha Fin</label>
           <input type="date" name="fechaFin" value={filtros.fechaFin} onChange={handleFilterChange} />
         </div>
-        <div className="form-group mb-0" style={{ flex: '1 1 180px' }}>
-          <label style={{ fontSize: '0.8rem' }}>Método de Pago</label>
+        <div className="form-group mb-0" style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: '0.75rem' }}>Método de Pago</label>
           <select name="metodoPago" value={filtros.metodoPago} onChange={handleFilterChange}>
             <option value="">Todos</option>
             <option value="Efectivo">Efectivo</option>
@@ -209,8 +201,8 @@ export default function Ventas() {
             <option value="Transferencia">Transferencia</option>
           </select>
         </div>
-        <div className="form-group mb-0" style={{ flex: '1 1 180px' }}>
-          <label style={{ fontSize: '0.8rem' }}>Estado</label>
+        <div className="form-group mb-0" style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: '0.75rem' }}>Estado</label>
           <select name="estado" value={filtros.estado} onChange={handleFilterChange}>
             <option value="">Todos</option>
             <option value="Completada">Completada</option>
@@ -220,71 +212,69 @@ export default function Ventas() {
       </div>
 
       {/* Tabla de Ventas */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Ticket / ID</th>
-                <th>Fecha y Hora</th>
-                <th>Cliente</th>
-                <th style={{ textAlign: 'center' }}>Medio de Pago</th>
-                <th style={{ textAlign: 'center' }}>Estado</th>
-                <th style={{ textAlign: 'right' }}>Total</th>
-                <th style={{ textAlign: 'center' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ventas.map(v => (
-                <tr key={v.id} style={{ opacity: v.estado === 'Anulada' ? 0.6 : 1 }}>
-                  <td className="mono" style={{ fontWeight: 700 }}>{v.numero_ticket || `#T-${v.id}`}</td>
-                  <td style={{ fontSize: '0.9rem' }}>{new Date(v.fecha).toLocaleString()}</td>
-                  <td style={{ fontWeight: 600 }}>{v.cliente}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className="badge info">{v.metodoPago}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={`badge ${v.estado === 'Completada' ? 'success' : 'danger'}`}>
-                      {v.estado}
-                    </span>
-                  </td>
-                  <td className="mono" style={{ textAlign: 'right', fontWeight: 800, fontSize: '1.05rem' }}>{formatCLP(v.total)}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="flex justify-center gap-2">
-                      <button className="secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => openTicket(v.id)}>
-                        👁️ Ver Ticket
+      <div className="card table-container" style={{ padding: 0 }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket / ID</th>
+              <th>Fecha y Hora</th>
+              <th>Cliente</th>
+              <th style={{ textAlign: 'center' }}>Medio de Pago</th>
+              <th style={{ textAlign: 'center' }}>Estado</th>
+              <th style={{ textAlign: 'right' }}>Total</th>
+              <th style={{ textAlign: 'center' }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ventas.map(v => (
+              <tr key={v.id} style={{ opacity: v.estado === 'Anulada' ? 0.6 : 1 }}>
+                <td className="mono" style={{ fontWeight: 700 }}>{v.numero_ticket || `#T-${v.id}`}</td>
+                <td style={{ fontSize: '0.85rem' }}>{new Date(v.fecha).toLocaleString()}</td>
+                <td style={{ fontWeight: 600 }}>{v.cliente}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <span className="badge info">{v.metodoPago}</span>
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <span className={`badge ${v.estado === 'Completada' ? 'success' : 'danger'}`}>
+                    {v.estado}
+                  </span>
+                </td>
+                <td className="mono" style={{ textAlign: 'right', fontWeight: 800, fontSize: '0.95rem' }}>{formatCLP(v.total)}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <div className="flex justify-center gap-1">
+                    <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => openTicket(v.id)}>
+                      👁️ Ticket
+                    </button>
+                    {v.estado === 'Completada' && (
+                      <button className="danger ghost" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => handleAnular(v.id)}>
+                        🚫 Anular
                       </button>
-                      {v.estado === 'Completada' && (
-                        <button className="danger ghost" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleAnular(v.id)}>
-                          🚫 Anular
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {ventas.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="empty-state">No se encontraron ventas registradas con los filtros seleccionados.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {ventas.length === 0 && (
+              <tr>
+                <td colSpan="7" className="empty-state">No se encontraron ventas registradas.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Ticket Modal */}
       {ticketModal.isOpen && ticketModal.venta && (
         <div className="modal-overlay">
-          <div className="card flex-col gap-4" style={{ width: '480px', background: '#f4f1e8', color: '#1b1d1f', border: '1px solid #d4cebe' }}>
+          <div className="modal-content flex-col gap-4" style={{ maxWidth: '440px', background: '#f4f1e8', color: '#1b1d1f', border: '1px solid #d4cebe' }}>
             <div className="flex justify-between items-center border-b pb-2" style={{ borderColor: '#999' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Ticket {ticketModal.venta.numero_ticket}</h2>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>Ticket {ticketModal.venta.numero_ticket}</h2>
               <span className={`badge ${ticketModal.venta.estado === 'Completada' ? 'success' : 'danger'}`}>
                 {ticketModal.venta.estado}
               </span>
             </div>
 
-            <div style={{ fontSize: '0.9rem', color: '#444' }} className="flex-col gap-1">
+            <div style={{ fontSize: '0.85rem', color: '#444' }} className="flex-col gap-1">
               <div><strong>Fecha:</strong> {new Date(ticketModal.venta.fecha).toLocaleString()}</div>
               <div><strong>Método de Pago:</strong> {ticketModal.venta.metodoPago}</div>
               {ticketModal.venta.cliente && (
@@ -295,7 +285,7 @@ export default function Ventas() {
               )}
             </div>
 
-            <table style={{ width: '100%', fontFamily: 'JetBrains Mono', fontSize: '0.85rem' }}>
+            <table style={{ width: '100%', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', minWidth: 'auto' }}>
               <thead style={{ borderBottom: '2px solid #888' }}>
                 <tr>
                   <th style={{ textAlign: 'left', paddingBottom: '6px', background: 'transparent', color: '#1b1d1f' }}>Item</th>
@@ -314,7 +304,7 @@ export default function Ventas() {
               </tbody>
             </table>
 
-            <div className="flex justify-between items-center pt-2 font-bold" style={{ borderTop: '2px solid #1b1d1f', fontSize: '1.25rem' }}>
+            <div className="flex justify-between items-center pt-2 font-bold" style={{ borderTop: '2px solid #1b1d1f', fontSize: '1.2rem' }}>
               <span>TOTAL</span>
               <span className="mono">{formatCLP(ticketModal.venta.total)}</span>
             </div>
