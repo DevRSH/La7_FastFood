@@ -210,10 +210,10 @@ def obtener_reporte_formalizacion_completo(db: Session) -> Dict[str, Any]:
     cogs_bruto_db = res_ventas.total_cogs or 0
     tx_total = res_ventas.total_tx or 0
 
-    # Usar tracción simulada proyectada si la BD aún tiene volumen bajo de pruebas
-    v_bruta = ventas_brutas_db if ventas_brutas_db >= 1000000 else 6545000
-    cogs_bruto = cogs_bruto_db if cogs_bruto_db > 0 else round(v_bruta * 0.35)
-    tx_total = tx_total if tx_total > 0 else 1000
+    # Usar tracción real de la base de datos
+    v_bruta = ventas_brutas_db
+    cogs_bruto = cogs_bruto_db if cogs_bruto_db > 0 else (round(v_bruta * 0.35) if v_bruta > 0 else 0)
+    tx_total = tx_total
 
     # 1. Desglose Tributario Chile (IVA 19%)
     v_neta = round(v_bruta / 1.19)
@@ -234,21 +234,21 @@ def obtener_reporte_formalizacion_completo(db: Session) -> Dict[str, Any]:
 
     # 2. Margen Bruto y EBITDA Operativo
     margen_bruto_clp = v_neta - cogs_neto
-    pct_margen_bruto = round((margen_bruto_clp / v_neta * 100.0), 2) if v_neta > 0 else 65.0
+    pct_margen_bruto = round((margen_bruto_clp / v_neta * 100.0), 2) if v_neta > 0 else 0.0
 
     ebitda_clp = margen_bruto_clp - opex_fijo_neto_total
-    pct_ebitda = round((ebitda_clp / v_neta * 100.0), 2) if v_neta > 0 else 25.0
+    pct_ebitda = round((ebitda_clp / v_neta * 100.0), 2) if v_neta > 0 else 0.0
 
-    ticket_promedio_neto = round(v_neta / tx_total, 2) if tx_total > 0 else 5500.0
+    ticket_promedio_neto = round(v_neta / tx_total, 2) if tx_total > 0 else 0.0
 
     # 3. Punto de Equilibrio Operativo
-    ratio_mb = (pct_margen_bruto / 100.0) if pct_margen_bruto > 0 else 0.65
+    ratio_mb = (pct_margen_bruto / 100.0) if pct_margen_bruto > 0 else 0.60
     pe_neto = round(opex_fijo_neto_total / ratio_mb) if ratio_mb > 0 else 0
     pe_bruto = round(pe_neto * 1.19)
 
     contribucion_unitaria = ticket_promedio_neto * ratio_mb
-    pe_unidades_mes = round(opex_fijo_neto_total / contribucion_unitaria) if contribucion_unitaria > 0 else 587
-    pe_unidades_dia = round(pe_unidades_mes / 26)
+    pe_unidades_mes = round(opex_fijo_neto_total / contribucion_unitaria) if contribucion_unitaria > 0 else 0
+    pe_unidades_dia = round(pe_unidades_mes / 26) if pe_unidades_mes > 0 else 0
 
     # 4. Capital de Trabajo en Inventario Actual
     insumos = db.query(Insumo).all()
@@ -256,7 +256,7 @@ def obtener_reporte_formalizacion_completo(db: Session) -> Dict[str, Any]:
     for i in insumos:
         if i.contenido_envase and i.contenido_envase > 0:
             working_capital += (i.stock_actual / i.contenido_envase) * i.costo_promedio
-    capital_trabajo_clp = int(working_capital) if working_capital > 0 else 850000
+    capital_trabajo_clp = int(working_capital)
 
     # 5. Matriz Sanitaria & Legal Chile 2026
     costos_chile = [
